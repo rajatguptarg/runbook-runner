@@ -2,24 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { LinkContainer } from 'react-router-bootstrap';
 import { Table, Button, Row, Col, Badge } from 'react-bootstrap';
-import { getRunbooks, executeRunbook } from '../services/api';
+import { getRunbooks, executeRunbook, deleteRunbook } from '../services/api';
 
 function RunbookList() {
   const [runbooks, setRunbooks] = useState([]);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchRunbooks = async () => {
-      try {
-        const response = await getRunbooks();
-        setRunbooks(response.data);
-      } catch (err) {
-        setError('Failed to fetch runbooks. Are you logged in?');
-        console.error(err);
-      }
-    };
+  const fetchRunbooks = async () => {
+    try {
+      const response = await getRunbooks();
+      setRunbooks(response.data);
+    } catch (err) {
+      setError('Failed to fetch runbooks. Are you logged in?');
+      console.error(err);
+    }
+  };
 
+  useEffect(() => {
     fetchRunbooks();
   }, []);
 
@@ -30,6 +30,18 @@ function RunbookList() {
     } catch (err) {
       setError('Failed to start execution.');
       console.error(err);
+    }
+  };
+
+  const deleteHandler = async (id) => {
+    if (window.confirm('Are you sure you want to delete this runbook?')) {
+      try {
+        await deleteRunbook(id);
+        fetchRunbooks(); // Refresh the list
+      } catch (err) {
+        setError('Failed to delete runbook.');
+        console.error(err);
+      }
     }
   };
 
@@ -89,7 +101,11 @@ function RunbookList() {
                 >
                   <i className="bi bi-play-fill"></i>
                 </Button>
-                <Button variant="danger" className="btn-sm mx-1">
+                <Button
+                  variant="danger"
+                  className="btn-sm mx-1"
+                  onClick={() => deleteHandler(runbook.id)}
+                >
                   <i className="bi bi-trash-fill"></i>
                 </Button>
               </td>

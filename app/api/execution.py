@@ -1,3 +1,6 @@
+import asyncio
+from datetime import datetime, UTC
+from loguru import logger
 from typing import List
 from uuid import UUID
 
@@ -9,7 +12,6 @@ from app.models.block import Block
 from app.models.execution import ExecutionJob, ExecutionStep
 from app.models.runbook import Runbook, RunbookVersion
 from app.security import require_roles
-from datetime import datetime
 from typing import Optional
 
 from app.services.execution import (
@@ -38,29 +40,82 @@ class ControlRequest(BaseModel):
     action: Literal["stop"]
 
 
+class BlockExecuteRequest(BaseModel):
+    block: Block
+    runbook_id: UUID
+
+
+async def record_single_block_execution(
+    runbook: Runbook, block: Block, result: BlockExecutionResult
+):
+    """
+    Creates ExecutionJob and ExecutionStep records for a single block run.
+    """
+    # Find the latest version to link the job to
+    latest_version = (
+        await RunbookVersion.find(RunbookVersion.runbook_id == runbook.id)
+        .sort("-version_number")
+        .first_or_none()
+    )
+    version_id = latest_version.id if latest_version else None
+
+    job_status = "completed" if result.status == "success" else "failed"
+
+    job = ExecutionJob(
+        runbook_id=runbook.id,
+        version_id=version_id,
+        status=job_status,
+        end_time=datetime.now(UTC),  # It's an instant job
+    )
+    await job.insert()
+
+    step = ExecutionStep(
+        job_id=job.id,
+        block_id=block.id,
+        status=result.status,
+        output=result.output,
+        exit_code=result.exit_code,
+    )
+    await step.insert()
+    logger.info(f"Recorded single block execution for job {job.id}")
+
+
 @router.post(
     "/blocks/execute",
     response_model=BlockExecutionResult,
     summary="Execute a single block",
 )
-async def execute_block(block: Block, _=auth):
+async def execute_block(request: BlockExecuteRequest, _=auth):
     """
-    Execute a single block and return the result immediately.
-    This does not create any persistent execution records.
+    Execute a single block, return the result immediately,
+    and record the execution in the history.
     """
+    block = request.block
+    runbook_id = request.runbook_id
+
+    # Find the runbook to associate the job with
+    runbook = await Runbook.get(runbook_id)
+    if not runbook:
+        raise HTTPException(status_code=404, detail="Associated runbook not found")
+
+    # Execute the block to get the result first
     if block.type == "command":
-        return await execute_command_block(block)
+        result = await execute_command_block(block)
     elif block.type == "api":
-        return await execute_api_block(block)
+        result = await execute_api_block(block)
     elif block.type == "instruction":
-        return BlockExecutionResult(
+        result = BlockExecutionResult(
             status="success", output="Instruction viewed.", exit_code=0
         )
-    # Add other block types here as needed
     else:
         raise HTTPException(
             status_code=400, detail=f"Block type '{block.type}' cannot be executed."
         )
+
+    # Now, create the history records in the background
+    asyncio.create_task(record_single_block_execution(runbook, block, result))
+
+    return result
 
 
 @router.post(

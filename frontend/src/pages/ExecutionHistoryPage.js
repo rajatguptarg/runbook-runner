@@ -65,6 +65,9 @@ function ExecutionHistoryPage() {
           <h1>Execution History</h1>
         </Col>
         <Col className="text-end">
+          <Button variant="light" onClick={fetchExecutions} className="me-2">
+            <i className="bi bi-arrow-clockwise me-2"></i>Refresh
+          </Button>
           <Button variant="danger" onClick={handleClear}>
             <i className="bi bi-trash-fill me-2"></i>Clear History
           </Button>

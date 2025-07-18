@@ -59,7 +59,12 @@ function RunbookViewer() {
         {runbook.blocks
           .sort((a, b) => a.order - b.order)
           .map((block) => (
-            <Block key={block.id} block={block} isEditable={false} />
+            <Block
+              key={block.id}
+              block={block}
+              runbookId={runbookId}
+              isEditable={false}
+            />
           ))}
       </div>
     </>

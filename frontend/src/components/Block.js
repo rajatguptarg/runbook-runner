@@ -44,7 +44,7 @@ const ApiBlock = ({ block }) => (
   </Card.Body>
 );
 
-const Block = ({ block, onDelete, onEdit, isEditable = false }) => {
+const Block = ({ block, runbookId, onDelete, onEdit, isEditable = false }) => {
   const [executionResult, setExecutionResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -52,14 +52,24 @@ const Block = ({ block, onDelete, onEdit, isEditable = false }) => {
     setIsLoading(true);
     setExecutionResult(null);
     try {
-      const { data } = await executeBlock(block);
+      const { data } = await executeBlock(block, runbookId);
       setExecutionResult(data);
     } catch (err) {
+      let outputMessage;
+      const detail = err.response?.data?.detail;
+
+      if (detail) {
+        outputMessage =
+          typeof detail === 'string'
+            ? detail
+            : JSON.stringify(detail, null, 2);
+      } else {
+        outputMessage = 'Failed to execute block. Check API logs.';
+      }
+
       setExecutionResult({
         status: 'error',
-        output:
-          err.response?.data?.detail ||
-          'Failed to execute block. Check API logs.',
+        output: outputMessage,
         exit_code: -1,
       });
     } finally {

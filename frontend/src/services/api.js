@@ -27,8 +27,10 @@ export const getRunbooks = () => instance.get('/runbooks');
 export const getRunbookDetails = (id) => instance.get(`/runbooks/${id}`);
 export const createRunbook = (data) => instance.post('/runbooks', data);
 export const updateRunbook = (id, data) => instance.put(`/runbooks/${id}`, data);
+export const deleteRunbook = (id) => instance.delete(`/runbooks/${id}`);
 export const executeRunbook = (id) => instance.post(`/runbooks/${id}/execute`);
-export const executeBlock = (block) => instance.post('/blocks/execute', block);
+export const executeBlock = (block, runbook_id) =>
+  instance.post('/blocks/execute', { block, runbook_id });
 
 // --- Executions ---
 export const getExecutions = () => instance.get('/executions');
