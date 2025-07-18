@@ -200,6 +200,9 @@ function RunbookViewer() {
                       block={block}
                       runbookId={runbookId}
                       isEditable={false}
+                      onAddNestedBlock={() => {}} // Not editable in viewer
+                      onEditNestedBlock={() => {}} // Not editable in viewer
+                      onDeleteNestedBlock={() => {}} // Not editable in viewer
                     />
                   </div>
                 </div>

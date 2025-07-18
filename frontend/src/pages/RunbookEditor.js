@@ -101,6 +101,82 @@ function RunbookEditor() {
     );
   };
 
+  const addNestedBlock = (parentBlockId, blockType) => {
+    const newNestedBlock = {
+      id: uuidv4(),
+      type: blockType,
+      name: `New ${blockType} block`,
+      config: {},
+      order: 1,
+    };
+
+    setBlocks(
+      blocks.map((block) => {
+        if (block.id === parentBlockId) {
+          const nestedBlocks = block.config.nested_blocks || [];
+          return {
+            ...block,
+            config: {
+              ...block.config,
+              nested_blocks: [...nestedBlocks, newNestedBlock]
+            }
+          };
+        }
+        return block;
+      })
+    );
+  };
+
+  const editNestedBlock = (parentBlockId, nestedBlock) => {
+    setEditingBlock({
+      ...nestedBlock,
+      parentBlockId: parentBlockId
+    });
+    setShowModal(true);
+  };
+
+  const deleteNestedBlock = (parentBlockId, nestedBlockId) => {
+    setBlocks(
+      blocks.map((block) => {
+        if (block.id === parentBlockId) {
+          const nestedBlocks = (block.config.nested_blocks || []).filter(
+            (nestedBlock) => nestedBlock.id !== nestedBlockId
+          );
+          return {
+            ...block,
+            config: {
+              ...block.config,
+              nested_blocks: nestedBlocks
+            }
+          };
+        }
+        return block;
+      })
+    );
+  };
+
+  const saveNestedBlock = (nestedBlockId, newConfig, name, parentBlockId) => {
+    setBlocks(
+      blocks.map((block) => {
+        if (block.id === parentBlockId) {
+          const nestedBlocks = (block.config.nested_blocks || []).map((nestedBlock) =>
+            nestedBlock.id === nestedBlockId
+              ? { ...nestedBlock, config: newConfig, name: name }
+              : nestedBlock
+          );
+          return {
+            ...block,
+            config: {
+              ...block.config,
+              nested_blocks: nestedBlocks
+            }
+          };
+        }
+        return block;
+      })
+    );
+  };
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div className="alert alert-danger">{error}</div>;
 
@@ -176,86 +252,16 @@ function RunbookEditor() {
                               ...provided.draggableProps.style
                             }}
                           >
-                            <div style={{
-                              backgroundColor: '#f8f9fa',
-                              border: '1px solid #e9ecef',
-                              borderRadius: '8px',
-                              padding: '1.5rem',
-                              position: 'relative'
-                            }}>
-                              <div className="d-flex align-items-center justify-content-between">
-                                <div className="d-flex align-items-center">
-                                  <span style={{
-                                    backgroundColor: '#007bff',
-                                    color: 'white',
-                                    borderRadius: '50%',
-                                    width: '24px',
-                                    height: '24px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontSize: '12px',
-                                    fontWeight: '600',
-                                    marginRight: '1rem'
-                                  }}>
-                                    {index + 1}
-                                  </span>
-                                  <div>
-                                    <h6 style={{ margin: 0, fontWeight: '600', color: '#2c3e50' }}>
-                                      {block.name || `${block.type} block`}
-                                    </h6>
-                                    <p style={{
-                                      margin: 0,
-                                      color: '#6c757d',
-                                      fontSize: '0.875rem'
-                                    }}>
-                                      {block.type === 'command' && block.config?.command ?
-                                        block.config.command :
-                                        `${block.type.charAt(0).toUpperCase() + block.type.slice(1)} step description`}
-                                    </p>
-                                  </div>
-                                </div>
-                                <div>
-                                  <Button
-                                    variant="link"
-                                    size="sm"
-                                    onClick={() => openModal(block)}
-                                    style={{
-                                      color: '#6c757d',
-                                      textDecoration: 'none',
-                                      padding: '4px 8px'
-                                    }}
-                                  >
-                                    <i className="bi bi-pencil"></i>
-                                  </Button>
-                                  <Button
-                                    variant="link"
-                                    size="sm"
-                                    onClick={() => deleteBlock(block.id)}
-                                    style={{
-                                      color: '#dc3545',
-                                      textDecoration: 'none',
-                                      padding: '4px 8px'
-                                    }}
-                                  >
-                                    <i className="bi bi-trash"></i>
-                                  </Button>
-                                </div>
-                              </div>
-                              {block.type === 'command' && block.config?.command && (
-                                <div style={{
-                                  backgroundColor: '#2c3e50',
-                                  color: '#ffffff',
-                                  borderRadius: '4px',
-                                  padding: '0.75rem',
-                                  marginTop: '1rem',
-                                  fontFamily: 'monospace',
-                                  fontSize: '0.875rem'
-                                }}>
-                                  {block.config.command}
-                                </div>
-                              )}
-                            </div>
+                            <Block
+                              block={block}
+                              runbookId={runbookId}
+                              onDelete={() => deleteBlock(block.id)}
+                              onEdit={() => openModal(block)}
+                              isEditable={true}
+                              onAddNestedBlock={addNestedBlock}
+                              onEditNestedBlock={editNestedBlock}
+                              onDeleteNestedBlock={deleteNestedBlock}
+                            />
                           </div>
                         )}
                       </Draggable>
@@ -405,6 +411,41 @@ function RunbookEditor() {
               <h6 style={{ fontWeight: '600', margin: 0 }}>Condition</h6>
             </div>
 
+            {/* API Block */}
+            <div
+              onClick={() => addBlock('api')}
+              style={{
+                border: '2px dashed #e9ecef',
+                borderRadius: '8px',
+                padding: '1rem',
+                textAlign: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.borderColor = '#007bff';
+                e.target.style.backgroundColor = '#f8f9ff';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.borderColor = '#e9ecef';
+                e.target.style.backgroundColor = 'transparent';
+              }}
+            >
+              <div style={{
+                backgroundColor: '#fce4ec',
+                borderRadius: '50%',
+                width: '40px',
+                height: '40px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 0.5rem'
+              }}>
+                <i className="bi bi-cloud" style={{ color: '#c2185b', fontSize: '1.2rem' }}></i>
+              </div>
+              <h6 style={{ fontWeight: '600', margin: 0 }}>API</h6>
+            </div>
+
             {/* Timer Block */}
             <div
               onClick={() => addBlock('timer')}
@@ -447,7 +488,13 @@ function RunbookEditor() {
         show={showModal}
         onHide={closeModal}
         block={editingBlock}
-        onSave={saveBlock}
+        onSave={(id, config, name, parentBlockId) => {
+          if (parentBlockId) {
+            saveNestedBlock(id, config, name, parentBlockId);
+          } else {
+            saveBlock(id, config, name);
+          }
+        }}
         credentials={credentials}
       />
     </div>

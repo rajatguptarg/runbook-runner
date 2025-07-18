@@ -13,7 +13,13 @@ function EditBlockModal({ show, onHide, block, onSave, credentials }) {
   }, [block]);
 
   const handleSave = () => {
-    onSave(block.id, config, name);
+    if (block.parentBlockId) {
+      // This is a nested block
+      onSave(block.id, config, name, block.parentBlockId);
+    } else {
+      // This is a regular block
+      onSave(block.id, config, name);
+    }
     onHide();
   };
 
@@ -102,8 +108,143 @@ function EditBlockModal({ show, onHide, block, onSave, credentials }) {
                 }
               />
             </Form.Group>
-
           </>
+        );
+      case 'condition':
+        return (
+          <>
+            <Form.Group controlId="conditionType">
+              <Form.Label>Condition Type</Form.Label>
+              <Form.Control
+                as="select"
+                value={config.condition_type || 'command_exit_code'}
+                onChange={(e) =>
+                  setConfig({ ...config, condition_type: e.target.value })
+                }
+              >
+                <option value="command_exit_code">Command Exit Code</option>
+                <option value="api_status_code">API Response Status</option>
+                <option value="file_exists">File Exists</option>
+                <option value="env_var_equals">Environment Variable Equals</option>
+              </Form.Control>
+            </Form.Group>
+
+            {config.condition_type === 'command_exit_code' && (
+              <>
+                <Form.Group controlId="checkCommand" className="mt-3">
+                  <Form.Label>Command to Check</Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="echo 'hello world'"
+                    value={config.check_command || ''}
+                    onChange={(e) =>
+                      setConfig({ ...config, check_command: e.target.value })
+                    }
+                  />
+                </Form.Group>
+                <Form.Group controlId="expectedExitCode" className="mt-3">
+                  <Form.Label>Expected Exit Code</Form.Label>
+                  <Form.Control
+                    type="number"
+                    placeholder="0"
+                    value={config.expected_exit_code || 0}
+                    onChange={(e) =>
+                      setConfig({ ...config, expected_exit_code: parseInt(e.target.value) })
+                    }
+                  />
+                </Form.Group>
+              </>
+            )}
+
+            {config.condition_type === 'api_status_code' && (
+              <>
+                <Form.Group controlId="checkUrl" className="mt-3">
+                  <Form.Label>URL to Check</Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="https://api.example.com/health"
+                    value={config.check_url || ''}
+                    onChange={(e) =>
+                      setConfig({ ...config, check_url: e.target.value })
+                    }
+                  />
+                </Form.Group>
+                <Form.Group controlId="expectedStatusCode" className="mt-3">
+                  <Form.Label>Expected Status Code</Form.Label>
+                  <Form.Control
+                    type="number"
+                    placeholder="200"
+                    value={config.expected_status_code || 200}
+                    onChange={(e) =>
+                      setConfig({ ...config, expected_status_code: parseInt(e.target.value) })
+                    }
+                  />
+                </Form.Group>
+              </>
+            )}
+
+            {config.condition_type === 'file_exists' && (
+              <Form.Group controlId="filePath" className="mt-3">
+                <Form.Label>File Path</Form.Label>
+                <Form.Control
+                  type="text"
+                  placeholder="/path/to/file"
+                  value={config.file_path || ''}
+                  onChange={(e) =>
+                    setConfig({ ...config, file_path: e.target.value })
+                  }
+                />
+              </Form.Group>
+            )}
+
+            {config.condition_type === 'env_var_equals' && (
+              <>
+                <Form.Group controlId="envVarName" className="mt-3">
+                  <Form.Label>Environment Variable Name</Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="NODE_ENV"
+                    value={config.env_var_name || ''}
+                    onChange={(e) =>
+                      setConfig({ ...config, env_var_name: e.target.value })
+                    }
+                  />
+                </Form.Group>
+                <Form.Group controlId="envVarValue" className="mt-3">
+                  <Form.Label>Expected Value</Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="production"
+                    value={config.env_var_value || ''}
+                    onChange={(e) =>
+                      setConfig({ ...config, env_var_value: e.target.value })
+                    }
+                  />
+                </Form.Group>
+              </>
+            )}
+
+            <hr />
+            <p style={{ color: '#6c757d', fontSize: '0.875rem', marginBottom: 0 }}>
+              <i className="bi bi-info-circle me-2"></i>
+              Nested blocks will be executed only if this condition evaluates to true.
+              You can add command, API, and instruction blocks inside this condition block after saving.
+            </p>
+          </>
+        );
+      case 'timer':
+        return (
+          <Form.Group controlId="duration">
+            <Form.Label>Duration (seconds)</Form.Label>
+            <Form.Control
+              type="number"
+              placeholder="30"
+              value={config.duration || ''}
+              onChange={(e) =>
+                setConfig({ ...config, duration: parseInt(e.target.value) })
+              }
+            />
+          </Form.Group>
         );
       default:
         return <p>No editable fields for this block type.</p>;
