@@ -105,92 +105,343 @@ function RunbookEditor() {
   if (error) return <div className="alert alert-danger">{error}</div>;
 
   return (
-    <>
-      <Link to="/" className="btn btn-light my-3">
-        Go Back
-      </Link>
-      <Form onSubmit={handleSave}>
-        <Form.Group controlId="title">
-          <Form.Label>Title</Form.Label>
-          <Form.Control
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-          ></Form.Control>
-        </Form.Group>
-
-        <Form.Group controlId="description" className="mt-3">
-          <Form.Label>Description</Form.Label>
-          <Form.Control
-            as="textarea"
-            rows={3}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            required
-          ></Form.Control>
-        </Form.Group>
-
-        <Form.Group controlId="tags" className="mt-3">
-          <Form.Label>Tags</Form.Label>
-          <Form.Control
-            type="text"
-            placeholder="Enter comma-separated tags"
-            value={tags.join(', ')}
-            onChange={(e) => setTags(e.target.value.split(',').map((tag) => tag.trim()))}
-          ></Form.Control>
-        </Form.Group>
-
-        <hr />
-
-        <h2>Steps</h2>
-        <DragDropContext onDragEnd={onDragEnd}>
-          <Droppable droppableId="blocks">
-            {(provided) => (
-              <div {...provided.droppableProps} ref={provided.innerRef}>
-                {blocks.map((block, index) => (
-                  <Draggable key={block.id} draggableId={block.id.toString()} index={index}>
-                    {(provided) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        {...provided.dragHandleProps}
-                      >
-                        <Block
-                          block={block}
-                          runbookId={runbookId}
-                          onDelete={() => deleteBlock(block.id)}
-                          onEdit={() => openModal(block)}
-                          isEditable={true}
-                        />
-                      </div>
-                    )}
-                  </Draggable>
-                ))}
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
-        </DragDropContext>
-
-        <Row className="mt-3">
-          <Col>
-            <Button variant="secondary" onClick={() => addBlock('instruction')}>
-              <i className="bi bi-plus-lg me-2"></i>Instruction
-            </Button>
-            <Button variant="secondary" className="ms-2" onClick={() => addBlock('command')}>
-              <i className="bi bi-plus-lg me-2"></i>Command
-            </Button>
-            <Button variant="secondary" className="ms-2" onClick={() => addBlock('api')}>
-              <i className="bi bi-plus-lg me-2"></i>API Call
-            </Button>
-          </Col>
-        </Row>
-
-        <Button type="submit" variant="primary" className="mt-4">
-          Save Runbook
+    <div style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
+      {/* Header with hamburger menu and title */}
+      <div style={{
+        backgroundColor: 'white',
+        borderBottom: '1px solid #e9ecef',
+        padding: '1rem 2rem',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between'
+      }}>
+        <div className="d-flex align-items-center">
+          <Button
+            variant="link"
+            style={{ padding: '0', border: 'none', marginRight: '1rem' }}
+            onClick={() => navigate('/')}
+          >
+            <i className="bi bi-list" style={{ fontSize: '1.5rem', color: '#6c757d' }}></i>
+          </Button>
+          <h4 style={{ margin: 0, fontWeight: '600', color: '#2c3e50' }}>
+            Editing: {title || 'Untitled Runbook'}
+          </h4>
+        </div>
+        <Button
+          variant="outline-secondary"
+          size="sm"
+          onClick={() => navigate('/')}
+          style={{ borderRadius: '6px' }}
+        >
+          Cancel
         </Button>
-      </Form>
+      </div>
+
+      <div className="d-flex" style={{ minHeight: 'calc(100vh - 80px)' }}>
+        {/* Main Content Area */}
+        <div style={{
+          flex: 1,
+          padding: '2rem',
+          marginRight: '320px' /* Space for sidebar */
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '2rem',
+            marginBottom: '2rem',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+            border: '1px solid #e9ecef'
+          }}>
+            <h5 style={{ fontWeight: '600', color: '#2c3e50', marginBottom: '1rem' }}>
+              {title || 'System Maintenance Runbook'}
+            </h5>
+            <p style={{ color: '#6c757d', marginBottom: '1.5rem', lineHeight: '1.6' }}>
+              {description || 'This runbook performs standard system maintenance on all production servers. It ensures that disk space is managed, packages are up-to-date, and critical services are running correctly.'}
+            </p>
+
+            {/* Steps Section */}
+            <DragDropContext onDragEnd={onDragEnd}>
+              <Droppable droppableId="blocks">
+                {(provided) => (
+                  <div {...provided.droppableProps} ref={provided.innerRef}>
+                    {blocks.map((block, index) => (
+                      <Draggable key={block.id} draggableId={block.id.toString()} index={index}>
+                        {(provided) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            style={{
+                              marginBottom: '1rem',
+                              ...provided.draggableProps.style
+                            }}
+                          >
+                            <div style={{
+                              backgroundColor: '#f8f9fa',
+                              border: '1px solid #e9ecef',
+                              borderRadius: '8px',
+                              padding: '1.5rem',
+                              position: 'relative'
+                            }}>
+                              <div className="d-flex align-items-center justify-content-between">
+                                <div className="d-flex align-items-center">
+                                  <span style={{
+                                    backgroundColor: '#007bff',
+                                    color: 'white',
+                                    borderRadius: '50%',
+                                    width: '24px',
+                                    height: '24px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '12px',
+                                    fontWeight: '600',
+                                    marginRight: '1rem'
+                                  }}>
+                                    {index + 1}
+                                  </span>
+                                  <div>
+                                    <h6 style={{ margin: 0, fontWeight: '600', color: '#2c3e50' }}>
+                                      {block.name || `${block.type} block`}
+                                    </h6>
+                                    <p style={{
+                                      margin: 0,
+                                      color: '#6c757d',
+                                      fontSize: '0.875rem'
+                                    }}>
+                                      {block.type === 'command' && block.config?.command ?
+                                        block.config.command :
+                                        `${block.type.charAt(0).toUpperCase() + block.type.slice(1)} step description`}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div>
+                                  <Button
+                                    variant="link"
+                                    size="sm"
+                                    onClick={() => openModal(block)}
+                                    style={{
+                                      color: '#6c757d',
+                                      textDecoration: 'none',
+                                      padding: '4px 8px'
+                                    }}
+                                  >
+                                    <i className="bi bi-pencil"></i>
+                                  </Button>
+                                  <Button
+                                    variant="link"
+                                    size="sm"
+                                    onClick={() => deleteBlock(block.id)}
+                                    style={{
+                                      color: '#dc3545',
+                                      textDecoration: 'none',
+                                      padding: '4px 8px'
+                                    }}
+                                  >
+                                    <i className="bi bi-trash"></i>
+                                  </Button>
+                                </div>
+                              </div>
+                              {block.type === 'command' && block.config?.command && (
+                                <div style={{
+                                  backgroundColor: '#2c3e50',
+                                  color: '#ffffff',
+                                  borderRadius: '4px',
+                                  padding: '0.75rem',
+                                  marginTop: '1rem',
+                                  fontFamily: 'monospace',
+                                  fontSize: '0.875rem'
+                                }}>
+                                  {block.config.command}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
+          </div>
+
+          <Button
+            type="submit"
+            variant="primary"
+            onClick={handleSave}
+            style={{
+              borderRadius: '8px',
+              fontWeight: '500',
+              padding: '10px 24px'
+            }}
+          >
+            Save Runbook
+          </Button>
+        </div>
+
+        {/* Sidebar - Add Blocks */}
+        <div style={{
+          position: 'fixed',
+          right: 0,
+          top: '80px',
+          width: '320px',
+          height: 'calc(100vh - 80px)',
+          backgroundColor: 'white',
+          borderLeft: '1px solid #e9ecef',
+          padding: '2rem'
+        }}>
+          <h5 style={{ fontWeight: '600', color: '#2c3e50', marginBottom: '1rem' }}>
+            Add Blocks
+          </h5>
+          <p style={{ color: '#6c757d', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
+            Drag and drop blocks to build your runbook.
+          </p>
+
+          <div className="d-grid gap-3">
+            {/* Instruction Block */}
+            <div
+              onClick={() => addBlock('instruction')}
+              style={{
+                border: '2px dashed #e9ecef',
+                borderRadius: '8px',
+                padding: '1rem',
+                textAlign: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.borderColor = '#007bff';
+                e.target.style.backgroundColor = '#f8f9ff';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.borderColor = '#e9ecef';
+                e.target.style.backgroundColor = 'transparent';
+              }}
+            >
+              <div style={{
+                backgroundColor: '#e3f2fd',
+                borderRadius: '50%',
+                width: '40px',
+                height: '40px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 0.5rem'
+              }}>
+                <i className="bi bi-info-circle" style={{ color: '#1976d2', fontSize: '1.2rem' }}></i>
+              </div>
+              <h6 style={{ fontWeight: '600', margin: 0 }}>Instruction</h6>
+            </div>
+
+            {/* Command Block */}
+            <div
+              onClick={() => addBlock('command')}
+              style={{
+                border: '2px dashed #e9ecef',
+                borderRadius: '8px',
+                padding: '1rem',
+                textAlign: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.borderColor = '#007bff';
+                e.target.style.backgroundColor = '#f8f9ff';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.borderColor = '#e9ecef';
+                e.target.style.backgroundColor = 'transparent';
+              }}
+            >
+              <div style={{
+                backgroundColor: '#f3e5f5',
+                borderRadius: '50%',
+                width: '40px',
+                height: '40px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 0.5rem'
+              }}>
+                <i className="bi bi-terminal" style={{ color: '#7b1fa2', fontSize: '1.2rem' }}></i>
+              </div>
+              <h6 style={{ fontWeight: '600', margin: 0 }}>Command</h6>
+            </div>
+
+            {/* Condition Block */}
+            <div
+              onClick={() => addBlock('condition')}
+              style={{
+                border: '2px dashed #e9ecef',
+                borderRadius: '8px',
+                padding: '1rem',
+                textAlign: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.borderColor = '#007bff';
+                e.target.style.backgroundColor = '#f8f9ff';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.borderColor = '#e9ecef';
+                e.target.style.backgroundColor = 'transparent';
+              }}
+            >
+              <div style={{
+                backgroundColor: '#fff3e0',
+                borderRadius: '50%',
+                width: '40px',
+                height: '40px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 0.5rem'
+              }}>
+                <i className="bi bi-question-circle" style={{ color: '#f57c00', fontSize: '1.2rem' }}></i>
+              </div>
+              <h6 style={{ fontWeight: '600', margin: 0 }}>Condition</h6>
+            </div>
+
+            {/* Timer Block */}
+            <div
+              onClick={() => addBlock('timer')}
+              style={{
+                border: '2px dashed #e9ecef',
+                borderRadius: '8px',
+                padding: '1rem',
+                textAlign: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.borderColor = '#007bff';
+                e.target.style.backgroundColor = '#f8f9ff';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.borderColor = '#e9ecef';
+                e.target.style.backgroundColor = 'transparent';
+              }}
+            >
+              <div style={{
+                backgroundColor: '#e8f5e8',
+                borderRadius: '50%',
+                width: '40px',
+                height: '40px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 0.5rem'
+              }}>
+                <i className="bi bi-clock" style={{ color: '#388e3c', fontSize: '1.2rem' }}></i>
+              </div>
+              <h6 style={{ fontWeight: '600', margin: 0 }}>Timer</h6>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <EditBlockModal
         show={showModal}
@@ -199,7 +450,7 @@ function RunbookEditor() {
         onSave={saveBlock}
         credentials={credentials}
       />
-    </>
+    </div>
   );
 }
 
