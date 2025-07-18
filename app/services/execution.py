@@ -1,18 +1,25 @@
 import asyncio
 import httpx
 from loguru import logger
-from app.models.block import Block
+from typing import Dict, Any
+from pydantic import BaseModel
 
+from app.models.block import Block
 from app.models.credential import Credential
 from app.models.execution import ExecutionJob, ExecutionStep
 from app.models.runbook import RunbookVersion
 from app.security import decrypt_secret
 
 
-async def process_api_block(job: ExecutionJob, block: Block) -> bool:
+class BlockExecutionResult(BaseModel):
+    status: str
+    output: str
+    exit_code: int
+
+
+async def execute_api_block(block: Block) -> BlockExecutionResult:
     """
-    Executes an API call block, captures the response, and records the step.
-    Returns True on success (2xx status code), False otherwise.
+    Executes an API call block and returns the result without creating a database record.
     """
     config = block.config
     method = config.get("method", "GET")
@@ -22,17 +29,9 @@ async def process_api_block(job: ExecutionJob, block: Block) -> bool:
     credential_id = config.get("credential_id")
 
     if not url:
-        logger.error(f"API block {block.id} has no URL configured.")
-        return False
-
-    step = ExecutionStep(
-        job_id=job.id,
-        block_id=block.id,
-        status="running",
-        output="",
-        exit_code=-1,
-    )
-    await step.insert()
+        return BlockExecutionResult(
+            status="error", output="API block has no URL configured.", exit_code=-1
+        )
 
     if credential_id:
         cred = await Credential.get(credential_id)
@@ -48,16 +47,16 @@ async def process_api_block(job: ExecutionJob, block: Block) -> bool:
                     response = await client.request(
                         method, url, headers=headers, json=body, timeout=10.0
                     )
-                    step.output = (
+                    output = (
                         f"Status: {response.status_code}\n"
                         f"Headers: {response.headers}\n"
                         f"Body: {response.text}"
                     )
-                    step.exit_code = response.status_code
+                    exit_code = response.status_code
                     if 200 <= response.status_code < 300:
-                        step.status = "success"
-                        await step.save()
-                        return True
+                        return BlockExecutionResult(
+                            status="success", output=output, exit_code=exit_code
+                        )
                     elif 500 <= response.status_code < 600:
                         logger.warning(
                             f"API call for block {block.id} failed with {response.status_code}. Retrying..."
@@ -65,9 +64,9 @@ async def process_api_block(job: ExecutionJob, block: Block) -> bool:
                         await asyncio.sleep(1 * attempt)
                         continue
                     else:
-                        step.status = "error"
-                        await step.save()
-                        return False
+                        return BlockExecutionResult(
+                            status="error", output=output, exit_code=exit_code
+                        )
                 except httpx.RequestError as e:
                     logger.exception(
                         f"Request failed for block {block.id}. Retrying..."
@@ -77,16 +76,71 @@ async def process_api_block(job: ExecutionJob, block: Block) -> bool:
                         raise e  # re-raise on last attempt
 
         # If all retries fail
-        step.status = "error"
-        await step.save()
-        return False
+        return BlockExecutionResult(
+            status="error",
+            output="API call failed after multiple retries.",
+            exit_code=-1,
+        )
 
     except Exception as e:
         logger.exception(f"Error executing API block {block.id}")
-        step.output = str(e)
-        step.status = "error"
-        await step.save()
-        return False
+        return BlockExecutionResult(status="error", output=str(e), exit_code=-1)
+
+
+async def execute_command_block(block: Block) -> BlockExecutionResult:
+    """
+    Executes a command block and returns the result without creating a database record.
+    """
+    command = block.config.get("command")
+    if not command:
+        return BlockExecutionResult(
+            status="error",
+            output="Command block has no command configured.",
+            exit_code=-1,
+        )
+
+    try:
+        proc = await asyncio.create_subprocess_shell(
+            command,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await proc.communicate()
+
+        output = ""
+        if stdout:
+            output += stdout.decode()
+        if stderr:
+            output += stderr.decode()
+
+        status = "success" if proc.returncode == 0 else "error"
+        return BlockExecutionResult(
+            status=status, output=output, exit_code=proc.returncode
+        )
+
+    except Exception as e:
+        logger.exception(f"Error executing command for block {block.id}")
+        return BlockExecutionResult(status="error", output=str(e), exit_code=-1)
+
+
+async def process_api_block(job: ExecutionJob, block: Block) -> bool:
+    """
+    Executes an API call block, captures the response, and records the step.
+    Returns True on success (2xx status code), False otherwise.
+    """
+    step = ExecutionStep(
+        job_id=job.id, block_id=block.id, status="running", output="", exit_code=-1
+    )
+    await step.insert()
+
+    result = await execute_api_block(block)
+
+    step.status = result.status
+    step.output = result.output
+    step.exit_code = result.exit_code
+    await step.save()
+
+    return result.status == "success"
 
 
 async def process_condition_block(job: ExecutionJob, block: Block) -> bool:
@@ -108,47 +162,19 @@ async def process_command_block(job: ExecutionJob, block: Block) -> bool:
     Executes a command block, captures its output, and records the step.
     Returns True on success, False on failure.
     """
-    command = block.config.get("command")
-    if not command:
-        logger.error(f"Command block {block.id} has no command configured.")
-        return False
-
     step = ExecutionStep(
-        job_id=job.id,
-        block_id=block.id,
-        status="running",
-        output="",
-        exit_code=-1,
+        job_id=job.id, block_id=block.id, status="running", output="", exit_code=-1
     )
     await step.insert()
 
-    try:
-        proc = await asyncio.create_subprocess_shell(
-            command,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-        stdout, stderr = await proc.communicate()
+    result = await execute_command_block(block)
 
-        output = ""
-        if stdout:
-            output += stdout.decode()
-        if stderr:
-            output += stderr.decode()
+    step.status = result.status
+    step.output = result.output
+    step.exit_code = result.exit_code
+    await step.save()
 
-        step.output = output
-        step.exit_code = proc.returncode
-        step.status = "success" if proc.returncode == 0 else "error"
-        await step.save()
-
-        return proc.returncode == 0
-
-    except Exception as e:
-        logger.exception(f"Error executing command for block {block.id}")
-        step.output = str(e)
-        step.status = "error"
-        await step.save()
-        return False
+    return result.status == "success"
 
 
 async def process_timer_block(job: ExecutionJob, block: Block) -> bool:

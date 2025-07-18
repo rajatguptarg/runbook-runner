@@ -1,5 +1,24 @@
-import React from 'react';
-import { Card, Button, Row, Col } from 'react-bootstrap';
+import React, { useState } from 'react';
+import { Card, Button, Row, Col, Spinner, Badge } from 'react-bootstrap';
+import { executeBlock } from '../services/api';
+
+const StatusBadge = ({ status }) => {
+  let variant;
+  switch (status) {
+    case 'success':
+      variant = 'success';
+      break;
+    case 'running':
+      variant = 'primary';
+      break;
+    case 'error':
+      variant = 'danger';
+      break;
+    default:
+      variant = 'secondary';
+  }
+  return <Badge bg={variant}>{status.toUpperCase()}</Badge>;
+};
 
 const InstructionBlock = ({ block }) => (
   <Card.Body>
@@ -18,12 +37,35 @@ const CommandBlock = ({ block }) => (
 const ApiBlock = ({ block }) => (
   <Card.Body>
     <Card.Text as="pre" className="bg-light p-2 rounded">
-      <strong>{block.config.method || 'GET'}</strong> {block.config.url || 'http://...'}
+      <strong>{block.config.method || 'GET'}</strong>{' '}
+      {block.config.url || 'http://...'}
     </Card.Text>
   </Card.Body>
 );
 
-const Block = ({ block, onDelete, onEdit }) => {
+const Block = ({ block, onDelete, onEdit, isEditable = false }) => {
+  const [executionResult, setExecutionResult] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleRun = async () => {
+    setIsLoading(true);
+    setExecutionResult(null);
+    try {
+      const { data } = await executeBlock(block);
+      setExecutionResult(data);
+    } catch (err) {
+      setExecutionResult({
+        status: 'error',
+        output:
+          err.response?.data?.detail ||
+          'Failed to execute block. Check API logs.',
+        exit_code: -1,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const renderBlockContent = () => {
     switch (block.type) {
       case 'instruction':
@@ -42,23 +84,56 @@ const Block = ({ block, onDelete, onEdit }) => {
       <Card.Header>
         <Row className="align-items-center">
           <Col>
-            <i className={`bi bi-${block.type === 'instruction' ? 'info-circle' : 'terminal'} me-2`}></i>
-            {block.name || `${block.type.charAt(0).toUpperCase() + block.type.slice(1)} Block`}
+            <i
+              className={`bi bi-${
+                block.type === 'instruction' ? 'info-circle' : 'terminal'
+              } me-2`}
+            ></i>
+            {block.name ||
+              `${block.type.charAt(0).toUpperCase() + block.type.slice(1)} Block`}
           </Col>
           <Col className="text-end">
-            <Button variant="light" className="btn-sm mx-1" onClick={onEdit}>
-              <i className="bi bi-pencil-fill"></i>
+            <Button
+              variant="primary"
+              className="btn-sm mx-1"
+              onClick={handleRun}
+              disabled={isLoading || block.type === 'instruction'}
+            >
+              {isLoading ? (
+                <Spinner animation="border" size="sm" />
+              ) : (
+                <i className="bi bi-play-fill"></i>
+              )}
             </Button>
-            <Button variant="danger" className="btn-sm mx-1" onClick={onDelete}>
-              <i className="bi bi-trash-fill"></i>
-            </Button>
-            <Button variant="light" className="btn-sm ms-2">
-              <i className="bi bi-grip-vertical"></i>
-            </Button>
+            {isEditable && (
+              <>
+                <Button variant="light" className="btn-sm mx-1" onClick={onEdit}>
+                  <i className="bi bi-pencil-fill"></i>
+                </Button>
+                <Button
+                  variant="danger"
+                  className="btn-sm mx-1"
+                  onClick={onDelete}
+                >
+                  <i className="bi bi-trash-fill"></i>
+                </Button>
+                <Button variant="light" className="btn-sm ms-2">
+                  <i className="bi bi-grip-vertical"></i>
+                </Button>
+              </>
+            )}
           </Col>
         </Row>
       </Card.Header>
       {renderBlockContent()}
+      {executionResult && (
+        <Card.Footer>
+          <StatusBadge status={executionResult.status} />
+          <pre className="bg-dark text-white p-3 rounded mt-2">
+            <code>{executionResult.output}</code>
+          </pre>
+        </Card.Footer>
+      )}
     </Card>
   );
 };

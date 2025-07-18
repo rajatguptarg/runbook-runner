@@ -5,11 +5,18 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from typing_extensions import Literal
 
+from app.models.block import Block
 from app.models.execution import ExecutionJob, ExecutionStep
 from app.models.runbook import Runbook, RunbookVersion
 from app.security import require_roles
 from datetime import datetime
 from typing import Optional
+
+from app.services.execution import (
+    execute_command_block,
+    execute_api_block,
+    BlockExecutionResult,
+)
 
 router = APIRouter()
 
@@ -29,6 +36,31 @@ class ExecutionStatusResponse(BaseModel):
 
 class ControlRequest(BaseModel):
     action: Literal["stop"]
+
+
+@router.post(
+    "/blocks/execute",
+    response_model=BlockExecutionResult,
+    summary="Execute a single block",
+)
+async def execute_block(block: Block, _=auth):
+    """
+    Execute a single block and return the result immediately.
+    This does not create any persistent execution records.
+    """
+    if block.type == "command":
+        return await execute_command_block(block)
+    elif block.type == "api":
+        return await execute_api_block(block)
+    elif block.type == "instruction":
+        return BlockExecutionResult(
+            status="success", output="Instruction viewed.", exit_code=0
+        )
+    # Add other block types here as needed
+    else:
+        raise HTTPException(
+            status_code=400, detail=f"Block type '{block.type}' cannot be executed."
+        )
 
 
 @router.post(

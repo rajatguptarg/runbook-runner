@@ -63,7 +63,9 @@ function RunbookList() {
         <tbody>
           {runbooks.map((runbook) => (
             <tr key={runbook.id}>
-              <td>{runbook.title}</td>
+              <td>
+                <Link to={`/runbooks/${runbook.id}`}>{runbook.title}</Link>
+              </td>
               <td>{runbook.description}</td>
               <td>{runbook.version}</td>
               <td>

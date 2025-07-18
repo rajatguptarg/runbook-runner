@@ -147,6 +147,7 @@ function RunbookEditor() {
                           block={block}
                           onDelete={() => deleteBlock(block.id)}
                           onEdit={() => openModal(block)}
+                          isEditable={true}
                         />
                       </div>
                     )}
