@@ -152,6 +152,28 @@ async def process_command_block(job: ExecutionJob, block: Block) -> bool:
         return False
 
 
+async def process_timer_block(job: ExecutionJob, block: Block) -> bool:
+    """
+    Pauses execution for a specified duration.
+    """
+    duration = block.config.get("duration", 0)
+    step = ExecutionStep(
+        job_id=job.id,
+        block_id=block.id,
+        status="running",
+        output=f"Pausing for {duration} seconds.",
+        exit_code=0,
+    )
+    await step.insert()
+
+    await asyncio.sleep(duration)
+
+    step.status = "success"
+    await step.save()
+    logger.info(f"Timer block {block.id} completed after {duration} seconds.")
+    return True
+
+
 async def run_job(job: ExecutionJob):
     """
     Runs a single execution job by processing its blocks sequentially.
@@ -187,6 +209,8 @@ async def run_job(job: ExecutionJob):
             success = await process_api_block(job, block)
         elif block.type == "condition":
             success = await process_condition_block(job, block)
+        elif block.type == "timer":
+            success = await process_timer_block(job, block)
         else:
             logger.warning(f"Block type '{block.type}' not yet supported.")
             success = True  # Treat unsupported types as success for now

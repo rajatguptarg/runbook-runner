@@ -298,3 +298,31 @@ async def test_run_condition_block_false():
         steps = await ExecutionStep.find(ExecutionStep.job_id == job.id).to_list()
         assert len(steps) == 1  # Fails on the condition
         assert mock_shell.call_count == 1
+
+
+@pytest.mark.asyncio
+@patch("asyncio.sleep", new_callable=AsyncMock)
+async def test_run_timer_block(mock_sleep):
+    # 1. Setup
+    runbook = Runbook(title="Timer Test", description="d", created_by=uuid4())
+    await runbook.insert()
+    version = RunbookVersion(
+        runbook_id=runbook.id,
+        version_number=1,
+        blocks=[Block(type="timer", config={"duration": 5}, order=1)],
+    )
+    await version.insert()
+    job = ExecutionJob(version_id=version.id, status="pending")
+    await job.insert()
+
+    # 2. Run job
+    await run_job(job)
+
+    # 3. Assertions
+    updated_job = await ExecutionJob.get(job.id)
+    assert updated_job.status == "completed"
+    steps = await ExecutionStep.find(ExecutionStep.job_id == job.id).to_list()
+    assert len(steps) == 1
+    assert steps[0].status == "success"
+    assert "Pausing for 5 seconds" in steps[0].output
+    mock_sleep.assert_called_once_with(5)
