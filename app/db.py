@@ -23,7 +23,7 @@ def create_init_beanie(models: Iterable[type]):
     async def init() -> None:
         connection = get_connection_string()
         db_name = os.getenv("DB_NAME")
-        client = AsyncIOMotorClient(connection)
+        client = AsyncIOMotorClient(connection, uuidRepresentation="standard")
         await init_beanie(database=client[db_name], document_models=list(models))
 
     return init
