@@ -11,5 +11,8 @@ repos:
     -   id: black
 -   repo: https://github.com/charliermarsh/ruff-pre-commit
     rev: 'v0.0.252'
+    #ignore F401 (F401 is unused import)
+    additional_dependencies: [ruff==0.0.252]
     hooks:
     -   id: ruff
+        args: [--ignore, F401]

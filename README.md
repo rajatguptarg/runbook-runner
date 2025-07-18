@@ -115,30 +115,49 @@ Authentication is handled via an `X-API-KEY` header. Users can obtain an API key
 ### Runbooks
 
 -   **GET** `/runbooks`
-    -   **Description**: List all runbooks.
+    -   **Description**: List all runbooks, returning the latest version of each.
     -   **Authentication**: Required.
+    -   **Response**: A list of `RunbookRead` objects.
 
 -   **POST** `/runbooks`
-    -   **Description**: Create a new runbook.
+    -   **Description**: Create a new runbook. This also creates the first version.
     -   **Authentication**: Required.
+    -   **Body**: `RunbookCreate`
+        -   `title` (str): The runbook title.
+        -   `description` (str): The runbook description.
+        -   `blocks` (List[Block], optional): A list of blocks to initialize the runbook with.
+    -   **Response**: `RunbookRead` object for the newly created runbook.
 
 -   **GET** `/runbooks/{id}`
-    -   **Description**: Fetch a single runbook by its ID.
+    -   **Description**: Fetch a single runbook by its ID, including the blocks from its latest version.
     -   **Authentication**: Required.
+    -   **Response**: `RunbookRead` object.
 
 -   **PUT** `/runbooks/{id}`
-    -   **Description**: Update a runbook. This creates a new version.
+    -   **Description**: Update a runbook's metadata and blocks. This creates a new version.
     -   **Authentication**: Required.
+    -   **Body**: `RunbookUpdate`
+        -   `title` (str): The updated title.
+        -   `description` (str): The updated description.
+        -   `blocks` (List[Block]): The new list of blocks for the new version.
+    -   **Response**: `RunbookRead` object reflecting the updated runbook and new version.
 
 -   **DELETE** `/runbooks/{id}`
-    -   **Description**: Delete a runbook.
+    -   **Description**: Delete a runbook and all of its associated versions.
     -   **Authentication**: Required.
+    -   **Response**: `204 No Content`.
 
 ### Versions
 
 -   **GET** `/runbooks/{id}/versions`
-    -   **Description**: List all versions for a specific runbook.
+    -   **Description**: List all historical versions for a specific runbook.
     -   **Authentication**: Required.
+    -   **Response**: A list of `RunbookRead` objects, each representing a version.
+
+-   **POST** `/runbooks/{id}/versions/{version_number}/rollback`
+    -   **Description**: Roll back to a specific version. This creates a new version with the content of the target version.
+    -   **Authentication**: Required.
+    -   **Response**: `RunbookRead` object for the newly created version.
 
 ### Execution
 

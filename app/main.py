@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
 from app.security import require_roles
-from app.api import users as users_router
+from app.api import users, runbooks, versions
 from app.db import create_init_beanie
 from app.models import (
     User,
@@ -45,4 +45,6 @@ async def protected(_=require_roles("sre")):
     return {"protected": True}
 
 
-app.include_router(users_router.router, prefix="/users", tags=["Users"])
+app.include_router(users.router, prefix="/users", tags=["Users"])
+app.include_router(runbooks.router, prefix="/runbooks", tags=["Runbooks"])
+app.include_router(versions.router, prefix="/runbooks", tags=["Runbooks"])

@@ -2,10 +2,10 @@ from fastapi import Header, HTTPException, status, Depends
 from .models import User
 
 
-async def get_current_role(
-    x_api_key: str | None = Header(None, alias="X-API-KEY")
-) -> str:
-    """Validate API key from database and return associated role."""
+async def get_current_user(
+    x_api_key: str | None = Header(None, alias="X-API-KEY"),
+) -> User:
+    """Validate API key from database and return associated user."""
     if x_api_key is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing API key"
@@ -17,6 +17,11 @@ async def get_current_role(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key"
         )
+    return user
+
+
+async def get_current_role(user: User = Depends(get_current_user)) -> str:
+    """Validate API key from database and return associated role."""
     return user.role
 
 

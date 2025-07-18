@@ -6,6 +6,7 @@ pydantic
 loguru
 pre-commit
 pytest
+pytest-asyncio
 httpx
 pymongo
 annotated-types
