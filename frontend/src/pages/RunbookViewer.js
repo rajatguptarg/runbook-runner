@@ -4,6 +4,8 @@ import { Button, Row, Col, Spinner } from 'react-bootstrap';
 import { getRunbookDetails } from '../services/api';
 import Block from '../components/Block';
 
+import ReactMarkdown from 'react-markdown';
+
 function RunbookViewer() {
   const { id: runbookId } = useParams();
   const [runbook, setRunbook] = useState(null);
@@ -34,7 +36,7 @@ function RunbookViewer() {
       <Row className="align-items-center my-3">
         <Col>
           <h1>{runbook.title}</h1>
-          <p>{runbook.description}</p>
+          <ReactMarkdown>{runbook.description}</ReactMarkdown>
         </Col>
         <Col className="text-end">
           <Link to={`/runbooks/${runbook.id}/edit`} className="btn btn-primary">

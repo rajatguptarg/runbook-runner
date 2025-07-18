@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Button, Row, Col, Spinner, Badge } from 'react-bootstrap';
+import ReactMarkdown from 'react-markdown';
 import { executeBlock } from '../services/api';
 
 const StatusBadge = ({ status }) => {
@@ -22,7 +23,7 @@ const StatusBadge = ({ status }) => {
 
 const InstructionBlock = ({ block }) => (
   <Card.Body>
-    <Card.Text>{block.config.text || 'No instruction text yet.'}</Card.Text>
+    <ReactMarkdown>{block.config.text || 'No instruction text yet.'}</ReactMarkdown>
   </Card.Body>
 );
 
