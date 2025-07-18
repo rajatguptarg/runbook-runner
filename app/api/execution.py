@@ -30,10 +30,14 @@ class ExecutionResponse(BaseModel):
     job_id: UUID = Field(..., description="The ID of the created execution job.")
 
 
+class ExecutionStepRead(ExecutionStep):
+    block_name: Optional[str] = None
+
+
 class ExecutionStatusResponse(BaseModel):
     job_id: UUID
     status: str
-    steps: List[ExecutionStep]
+    steps: List[ExecutionStepRead]
 
 
 class ControlRequest(BaseModel):
@@ -198,12 +202,23 @@ async def get_execution_status(job_id: UUID, _=auth):
     if not job:
         raise HTTPException(status_code=404, detail="Execution job not found")
 
+    # Fetch the version to get block names
+    version = await RunbookVersion.get(job.version_id) if job.version_id else None
+    block_id_to_name_map = (
+        {str(b.id): b.name for b in version.blocks} if version else {}
+    )
+
     steps = await ExecutionStep.find(ExecutionStep.job_id == job.id).to_list()
+    enriched_steps = []
+    for step in steps:
+        step_dict = step.model_dump()
+        step_dict["block_name"] = block_id_to_name_map.get(str(step.block_id))
+        enriched_steps.append(ExecutionStepRead(**step_dict))
 
     return ExecutionStatusResponse(
         job_id=job.id,
         status=job.status,
-        steps=steps,
+        steps=enriched_steps,
     )
 
 

@@ -87,7 +87,9 @@ function ExecutionViewer() {
         <Card key={step.id} className="mb-3">
           <Card.Header>
             <StatusBadge status={step.status} />
-            <strong className="ms-2">Step: {step.block_id}</strong>
+            <strong className="ms-2">
+              Step: {step.block_name || step.block_id}
+            </strong>
           </Card.Header>
           <Card.Body>
             <pre className="bg-dark text-white p-3 rounded">
