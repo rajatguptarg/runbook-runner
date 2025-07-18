@@ -1,3 +1,4 @@
+mongomock-motor
 fastapi
 uvicorn[standard]
 beanie

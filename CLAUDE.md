@@ -21,10 +21,10 @@ The system follows a 3-tier architecture:
 
 ### Key Components
 
-- **API Layer**: FastAPI with Pydantic validation and RBAC enforcement
-- **Execution Service**: Polls execution queue, runs steps, captures outputs
-- **Persistence Layer**: Beanie ODM with MongoDB for runbooks, versions, executions, credentials
-- **Authentication**: API-key based with role-based access control
+- **API Layer**: FastAPI with Pydantic validation and RBAC enforcement, with routers in `app/api`.
+- **Execution Service**: Polls execution queue, runs steps, captures outputs. Resides in `app/services`.
+- **Persistence Layer**: Beanie ODM with models defined in `app/models`.
+- **Authentication**: API-key based with role-based access control in `app/security.py`.
 
 ## Data Models
 
