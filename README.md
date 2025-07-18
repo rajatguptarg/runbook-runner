@@ -178,15 +178,22 @@ Authentication is handled via an `X-API-KEY` header. Users can obtain an API key
 
 -   **GET** `/credentials`
     -   **Description**: List all credentials.
-    -   **Authentication**: Required (typically restricted to certain roles).
+    -   **Authentication**: Required (restricted to "sre" role).
+    -   **Response**: A list of `CredentialRead` objects (excluding the secret).
 
 -   **POST** `/credentials`
-    -   **Description**: Create a new credential.
-    -   **Authentication**: Required (typically restricted to certain roles).
+    -   **Description**: Create a new credential. The secret will be encrypted at rest.
+    -   **Authentication**: Required (restricted to "sre" role).
+    -   **Body**: `CredentialCreate`
+        -   `name` (str): A user-friendly name for the credential.
+        -   `type` (str): The type of credential, either "ssh" or "api".
+        -   `secret` (str): The secret value to be stored.
+    -   **Response**: `CredentialRead` object for the newly created credential.
 
 -   **DELETE** `/credentials/{id}`
-    -   **Description**: Delete a credential.
-    -   **Authentication**: Required (typically restricted to certain roles).
+    -   **Description**: Delete a credential by its ID.
+    -   **Authentication**: Required (restricted to "sre" role).
+    -   **Response**: `204 No Content`.
 
 
 ## Contributing
