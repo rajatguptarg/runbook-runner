@@ -1,6 +1,8 @@
 import asyncio
 from fastapi import FastAPI
+from prometheus_fastapi_instrumentator import Instrumentator
 
+from app.logging_config import setup_logging
 from app.security import require_roles
 from app.api import users, runbooks, versions, credentials, execution, audit
 from app.db import create_init_beanie
@@ -15,11 +17,17 @@ from app.models import (
 )
 from app.services.execution import execution_worker
 
+# Apply logging configuration
+setup_logging()
+
 app = FastAPI(
     title="Runbook Studio",
     description="A web-based application for actionable runbooks.",
     version="0.1.0",
 )
+
+# Expose Prometheus metrics
+Instrumentator().instrument(app).expose(app)
 
 document_models = [
     User,

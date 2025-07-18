@@ -1,14 +1,12 @@
 import asyncio
-import logging
 import httpx
+from loguru import logger
 from app.models.block import Block
 
 from app.models.credential import Credential
 from app.models.execution import ExecutionJob, ExecutionStep
 from app.models.runbook import RunbookVersion
 from app.security import decrypt_secret
-
-logger = logging.getLogger(__name__)
 
 
 async def process_api_block(job: ExecutionJob, block: Block) -> bool:
