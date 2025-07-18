@@ -5,14 +5,21 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock, AsyncMock
 from uuid import uuid4
 
-sys.path.append(str(Path(__file__).resolve().parents[1]))
-
+import httpx
 import pytest
 from mongomock_motor import AsyncMongoMockClient
 
 import app.db as db
-from app.models import ExecutionJob, Runbook, RunbookVersion, Block, ExecutionStep
+from app.models import (
+    ExecutionJob,
+    Runbook,
+    RunbookVersion,
+    Block,
+    ExecutionStep,
+    Credential,
+)
 from app.services.execution import run_job
+from app.security import encrypt_secret
 
 
 @pytest.fixture(autouse=True)
@@ -22,6 +29,7 @@ def setup_db(monkeypatch):
     monkeypatch.setenv("DB_PASSWORD", "p")
     monkeypatch.setenv("DB_HOST", "localhost")
     monkeypatch.setenv("DB_NAME", "testdb")
+    monkeypatch.setenv("SECRET_KEY", "870STvCfnd0oNi-TeWJM6986M9Rfm26zbnIgTOKwDLw=")
     yield
 
 
@@ -132,3 +140,161 @@ async def test_run_job_failure():
 
         # Ensure the third command was never run
         assert mock_shell.call_count == 2
+
+
+@pytest.mark.asyncio
+@patch("httpx.AsyncClient.request", new_callable=AsyncMock)
+async def test_run_api_block_success(mock_request):
+    # 1. Setup
+    mock_request.return_value = httpx.Response(200, json={"status": "ok"})
+    runbook = Runbook(title="API Test", description="d", created_by=uuid4())
+    await runbook.insert()
+
+    version = RunbookVersion(
+        runbook_id=runbook.id,
+        version_number=1,
+        blocks=[
+            Block(
+                type="api",
+                config={"method": "GET", "url": "https://example.com/api"},
+                order=1,
+            )
+        ],
+    )
+    await version.insert()
+    job = ExecutionJob(version_id=version.id, status="pending")
+    await job.insert()
+
+    # 2. Run job
+    await run_job(job)
+
+    # 3. Assertions
+    updated_job = await ExecutionJob.get(job.id)
+    assert updated_job.status == "completed"
+    steps = await ExecutionStep.find(ExecutionStep.job_id == job.id).to_list()
+    assert len(steps) == 1
+    assert steps[0].status == "success"
+    assert steps[0].exit_code == 200
+    assert "Status: 200" in steps[0].output
+    mock_request.assert_called_once()
+
+
+@pytest.mark.asyncio
+@patch("httpx.AsyncClient.request", new_callable=AsyncMock)
+async def test_run_api_block_with_credential(mock_request):
+    # 1. Setup
+    mock_request.return_value = httpx.Response(200, json={"status": "ok"})
+    cred = Credential(
+        name="MyKey",
+        type="api",
+        encrypted_secret=encrypt_secret("my-secret-token"),
+        created_by=uuid4(),
+    )
+    await cred.insert()
+
+    runbook = Runbook(title="API Cred Test", description="d", created_by=uuid4())
+    await runbook.insert()
+    version = RunbookVersion(
+        runbook_id=runbook.id,
+        version_number=1,
+        blocks=[
+            Block(
+                type="api",
+                config={
+                    "method": "GET",
+                    "url": "https://example.com/api",
+                    "credential_id": str(cred.id),
+                },
+                order=1,
+            )
+        ],
+    )
+    await version.insert()
+    job = ExecutionJob(version_id=version.id, status="pending")
+    await job.insert()
+
+    # 2. Run job
+    await run_job(job)
+
+    # 3. Assertions
+    updated_job = await ExecutionJob.get(job.id)
+    assert updated_job.status == "completed"
+    # Check that the header was added
+    mock_request.assert_called_once()
+    call_kwargs = mock_request.call_args.kwargs
+    assert "headers" in call_kwargs
+    assert call_kwargs["headers"]["Authorization"] == "Bearer my-secret-token"
+
+
+@pytest.mark.asyncio
+async def test_run_condition_block_true():
+    # 1. Setup
+    runbook = Runbook(title="Cond Test", description="d", created_by=uuid4())
+    await runbook.insert()
+    version = RunbookVersion(
+        runbook_id=runbook.id,
+        version_number=1,
+        blocks=[
+            Block(
+                type="condition",
+                config={"type": "command", "command": "exit 0"},
+                order=1,
+            ),
+            Block(type="command", config={"command": "echo 'was true'"}, order=2),
+        ],
+    )
+    await version.insert()
+    job = ExecutionJob(version_id=version.id, status="pending")
+    await job.insert()
+
+    # 2. Mock subprocess
+    with patch("asyncio.create_subprocess_shell") as mock_shell:
+        mock_shell.return_value.communicate.return_value = (b"", b"")
+        mock_shell.return_value.returncode = 0
+
+        # 3. Run job
+        await run_job(job)
+
+        # 4. Assertions
+        updated_job = await ExecutionJob.get(job.id)
+        assert updated_job.status == "completed"
+        steps = await ExecutionStep.find(ExecutionStep.job_id == job.id).to_list()
+        assert len(steps) == 2
+        assert mock_shell.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_run_condition_block_false():
+    # 1. Setup
+    runbook = Runbook(title="Cond Test False", description="d", created_by=uuid4())
+    await runbook.insert()
+    version = RunbookVersion(
+        runbook_id=runbook.id,
+        version_number=1,
+        blocks=[
+            Block(
+                type="condition",
+                config={"type": "command", "command": "exit 1"},
+                order=1,
+            ),
+            Block(type="command", config={"command": "echo 'never runs'"}, order=2),
+        ],
+    )
+    await version.insert()
+    job = ExecutionJob(version_id=version.id, status="pending")
+    await job.insert()
+
+    # 2. Mock subprocess
+    with patch("asyncio.create_subprocess_shell") as mock_shell:
+        mock_shell.return_value.communicate.return_value = (b"", b"")
+        mock_shell.return_value.returncode = 1
+
+        # 3. Run job
+        await run_job(job)
+
+        # 4. Assertions
+        updated_job = await ExecutionJob.get(job.id)
+        assert updated_job.status == "failed"
+        steps = await ExecutionStep.find(ExecutionStep.job_id == job.id).to_list()
+        assert len(steps) == 1  # Fails on the condition
+        assert mock_shell.call_count == 1
