@@ -5,7 +5,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.runbooks import RunbookRead
 from app.models.runbook import Runbook, RunbookVersion
-from app.security import require_roles
+from app.models.user import User
+from app.security import get_current_user, require_roles
+from app.services.audit import log_action
 
 router = APIRouter()
 
@@ -52,7 +54,12 @@ async def list_versions(runbook_id: UUID, _=auth):
     response_model=RunbookRead,
     summary="Roll back to a specific version",
 )
-async def rollback_to_version(runbook_id: UUID, version_number: int, _=auth):
+async def rollback_to_version(
+    runbook_id: UUID,
+    version_number: int,
+    current_user: User = Depends(get_current_user),
+    _=auth,
+):
     """
     Roll back a runbook to a specific version by creating a new version
     that is a copy of the target version's content.
@@ -84,6 +91,16 @@ async def rollback_to_version(runbook_id: UUID, version_number: int, _=auth):
         blocks=target_version.blocks,
     )
     await new_version.insert()
+
+    await log_action(
+        current_user,
+        "rollback_runbook",
+        runbook.id,
+        details={
+            "rolled_back_to_version": version_number,
+            "new_version": new_version.version_number,
+        },
+    )
 
     return RunbookRead(
         **runbook.model_dump(),

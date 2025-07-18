@@ -9,6 +9,7 @@ from typing_extensions import Literal
 from app.models.credential import Credential
 from app.models.user import User
 from app.security import get_current_user, require_roles, encrypt_secret
+from app.services.audit import log_action
 
 router = APIRouter()
 
@@ -53,6 +54,12 @@ async def create_credential(
         created_by=current_user.id,
     )
     await credential.insert()
+    await log_action(
+        current_user,
+        "create_credential",
+        credential.id,
+        details={"name": data.name, "type": data.type},
+    )
     return CredentialRead(**credential.model_dump())
 
 
@@ -87,4 +94,5 @@ async def delete_credential(
         raise HTTPException(status_code=404, detail="Credential not found")
 
     await credential.delete()
+    await log_action(current_user, "delete_credential", credential.id)
     return None

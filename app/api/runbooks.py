@@ -8,6 +8,7 @@ from app.models.block import Block
 from app.models.runbook import Runbook, RunbookVersion
 from app.models.user import User
 from app.security import get_current_user, require_roles
+from app.services.audit import log_action
 from pydantic import BaseModel
 
 
@@ -69,6 +70,13 @@ async def create_runbook(
         blocks=data.blocks,
     )
     await version.insert()
+
+    await log_action(
+        current_user,
+        "create_runbook",
+        runbook.id,
+        details={"title": data.title},
+    )
 
     return RunbookRead(
         **runbook.model_dump(),
@@ -150,7 +158,12 @@ async def get_runbook(runbook_id: UUID, _=auth):
     response_model=RunbookRead,
     summary="Update a runbook",
 )
-async def update_runbook(runbook_id: UUID, data: RunbookUpdate, _=auth):
+async def update_runbook(
+    runbook_id: UUID,
+    data: RunbookUpdate,
+    current_user: User = Depends(get_current_user),
+    _=auth,
+):
     """
     Update a runbook's title, description, and blocks. This creates a new version.
     """
@@ -178,6 +191,13 @@ async def update_runbook(runbook_id: UUID, data: RunbookUpdate, _=auth):
     runbook.updated_at = datetime.utcnow()
     await runbook.save()
 
+    await log_action(
+        current_user,
+        "update_runbook",
+        runbook.id,
+        details={"new_version": new_version.version_number},
+    )
+
     return RunbookRead(
         **runbook.model_dump(),
         version=new_version.version_number,
@@ -190,7 +210,9 @@ async def update_runbook(runbook_id: UUID, data: RunbookUpdate, _=auth):
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete a runbook",
 )
-async def delete_runbook(runbook_id: UUID, _=auth):
+async def delete_runbook(
+    runbook_id: UUID, current_user: User = Depends(get_current_user), _=auth
+):
     """
     Delete a runbook and all its associated versions.
     """
@@ -200,4 +222,7 @@ async def delete_runbook(runbook_id: UUID, _=auth):
 
     await RunbookVersion.find(RunbookVersion.runbook_id == runbook.id).delete()
     await runbook.delete()
+
+    await log_action(current_user, "delete_runbook", runbook.id)
+
     return None

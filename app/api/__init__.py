@@ -1,3 +1,3 @@
-from . import users, runbooks, versions, credentials, execution
+from . import users, runbooks, versions, credentials, execution, audit
 
-__all__ = ["users", "runbooks", "versions", "credentials", "execution"]
+__all__ = ["users", "runbooks", "versions", "credentials", "execution", "audit"]

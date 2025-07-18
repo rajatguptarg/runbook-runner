@@ -2,7 +2,7 @@ import asyncio
 from fastapi import FastAPI
 
 from app.security import require_roles
-from app.api import users, runbooks, versions, credentials, execution
+from app.api import users, runbooks, versions, credentials, execution, audit
 from app.db import create_init_beanie
 from app.models import (
     User,
@@ -11,6 +11,7 @@ from app.models import (
     ExecutionJob,
     ExecutionStep,
     Credential,
+    AuditLog,
 )
 from app.services.execution import execution_worker
 
@@ -27,6 +28,7 @@ document_models = [
     ExecutionJob,
     ExecutionStep,
     Credential,
+    AuditLog,
 ]
 init_db = create_init_beanie(document_models)
 
@@ -61,3 +63,4 @@ app.include_router(runbooks.router, prefix="/runbooks", tags=["Runbooks"])
 app.include_router(versions.router, prefix="/runbooks", tags=["Runbooks"])
 app.include_router(credentials.router, prefix="/credentials", tags=["Credentials"])
 app.include_router(execution.router, tags=["Execution"])
+app.include_router(audit.router, prefix="/audit", tags=["Audit"])
