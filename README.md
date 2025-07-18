@@ -47,7 +47,7 @@ The system follows a 3-tier architecture:
 
 ## Tech Stack
 
-- **Backend**: Python 3.13, FastAPI, SQLModel, Pydantic, Alembic
+- **Backend**: Python 3.11, FastAPI, SQLModel, Pydantic, Alembic
 - **Frontend**: React, React Router, Axios
 - **Database**: PostgreSQL
 - **Logging**: Loguru
@@ -55,39 +55,32 @@ The system follows a 3-tier architecture:
 
 ## Development Setup
 
-### Backend
-
-1.  Create and activate a Python 3.13 virtual environment:
+1.  Create and activate a Python virtual environment:
     ```sh
-    python3.13 -m venv .venv
+    python3 -m venv .venv
     source .venv/bin/activate
     ```
 2.  Install dependencies:
     ```sh
-    pip install fastapi "uvicorn[standard]" sqlmodel pydantic loguru pre-commit
+    pip install -r requirements.txt
     ```
 3.  Install pre-commit hooks:
     ```sh
     pre-commit install
     ```
 4.  Set up environment variables for the PostgreSQL connection (e.g., in a `.env` file).
-5.  Run database migrations using Alembic.
+5.  Run database migrations using Alembic (not yet configured).
 6.  Run the application:
     ```sh
     uvicorn app.main:app --reload
     ```
 
-### Frontend
+## Testing
 
-1.  Navigate to the `frontend/` directory (to be created).
-2.  Install dependencies:
-    ```sh
-    npm install
-    ```
-3.  Start the development server:
-    ```sh
-    npm start
-    ```
+To run the test suite, use `pytest`:
+```sh
+pytest
+```
 
 ## API Endpoints
 
@@ -112,4 +105,4 @@ Please refer to `spec/tasks.md` for the planned implementation tasks. Contributi
 
 ## License
 
-This project is unlicensed.
+This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
