@@ -6,6 +6,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a web-based **Runbook Application** ("Runbook Studio") designed for SRE engineers, on-call engineers, and developers to author, manage, and execute operational runbooks. The application supports creating step-by-step instructions or executable blocks (shell commands, API calls, conditional checks, timers) to streamline incident containment and reduce MTTR.
 
+Key features include:
+- **Markdown Support**: Descriptions and instructions are rendered as Markdown.
+- **Tagging**: Organize runbooks with comma-separated tags.
+- **Interactive Execution**: Run individual blocks directly from the editor, like a Jupyter notebook, with outputs displayed inline.
+- **Execution History**: All executions, including single-block runs, are recorded.
+- **Read-Only View**: A dedicated view mode prevents accidental edits.
+
 The details are:
 * **Requirements**: Can be found under `spec/requirements.md` file.
 * **Design & System Architecture**: Can be found under `spec/design.md` file.
@@ -29,12 +36,12 @@ The system follows a 3-tier architecture:
 ## Data Models
 
 Core entities include:
-- **Runbook**: Title, description, metadata
-- **RunbookVersion**: Versioned blocks with rollback capability
-- **Block**: Five types - instruction, command, api, condition, timer
-- **ExecutionJob**: Tracks execution state and progress
-- **ExecutionStep**: Individual step outputs and status
-- **Credential**: Encrypted storage for API keys and SSH credentials
+- **Runbook**: Title, description, metadata, and a list of `tags`.
+- **RunbookVersion**: Versioned blocks with rollback capability.
+- **Block**: A user-defined `name`, five types (instruction, command, api, condition, timer), and configuration.
+- **ExecutionJob**: Tracks execution state and progress.
+- **ExecutionStep**: Individual step outputs and status.
+- **Credential**: Encrypted storage for API keys and SSH credentials.
 
 ## Development Setup
 
@@ -66,9 +73,9 @@ Since this is a new project without existing code, you'll need to:
 ### Runbooks
 
 -   **GET** `/runbooks` - List all runbooks.
--   **POST** `/runbooks` - Create a new runbook.
+-   **POST** `/runbooks` - Create a new runbook (accepts `tags`).
 -   **GET** `/runbooks/{id}` - Fetch a single runbook.
--   **PUT** `/runbooks/{id}` - Update a runbook (creates a new version).
+-   **PUT** `/runbooks/{id}` - Update a runbook (accepts `tags`, creates a new version).
 -   **DELETE** `/runbooks/{id}` - Delete a runbook.
 
 ### Versions
@@ -77,8 +84,9 @@ Since this is a new project without existing code, you'll need to:
 
 ### Execution
 
+-   **POST** `/blocks/execute` - Execute a single block and record it in the history.
 -   **POST** `/runbooks/{id}/execute` - Enqueue a new execution job.
--   **GET** `/executions/{job_id}` - Get the status and output of an execution job.
+-   **GET** `/executions/{job_id}` - Get the status and output of an execution job (includes `block_name`).
 -   **POST** `/executions/{job_id}/control` - Pause, resume, or stop a job.
 
 ### Credentials
@@ -92,16 +100,6 @@ Since this is a new project without existing code, you'll need to:
 - **Unit Tests**: Pydantic validation, block execution logic
 - **Integration Tests**: FastAPI endpoints with TestClient
 - **E2E Tests**: Full runbook creation and execution flow
-
-## Implementation Tasks
-
-The project is organized into 21 implementation tasks covering:
-- Backend infrastructure (Tasks 1-4)
-- Core APIs (Tasks 5-7)
-- Execution engine (Tasks 8-12)
-- Audit logging (Task 13)
-- Frontend components (Tasks 15-19)
-- Testing and documentation (Tasks 20-21)
 
 ## Security Considerations
 

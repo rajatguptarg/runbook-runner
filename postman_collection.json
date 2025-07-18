@@ -1,0 +1,488 @@
+{
+	"info": {
+		"_postman_id": "a8a1b8f0-c1e2-4d3f-8b9a-9c1d0e1f2a3b",
+		"name": "Runbook Studio",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"description": "API for the Runbook Studio application."
+	},
+	"item": [
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "Sign Up",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"const jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"API_KEY\", jsonData.api_key);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"sre-user\",\n  \"password\": \"password123\",\n  \"role\": \"sre\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/users/signup",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"users",
+								"signup"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"sre-user\",\n  \"password\": \"password123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/users/login",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"users",
+								"login"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Runbooks",
+			"item": [
+				{
+					"name": "Create Runbook",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"RUNBOOK_ID\", jsonData.id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-API-KEY",
+								"value": "{{API_KEY}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"My New Runbook\",\n  \"description\": \"This is a runbook created from Postman.\",\n  \"tags\": [\"postman\", \"testing\"],\n  \"blocks\": [\n    {\n      \"name\": \"Say Hello\",\n      \"type\": \"command\",\n      \"config\": {\n        \"command\": \"echo 'Hello, World!'\"\n      },\n      \"order\": 1\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/runbooks",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"runbooks"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "List Runbooks",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-KEY",
+								"value": "{{API_KEY}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/runbooks",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"runbooks"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Runbook Details",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-KEY",
+								"value": "{{API_KEY}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/runbooks/{{RUNBOOK_ID}}",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"runbooks",
+								"{{RUNBOOK_ID}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Runbook",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "X-API-KEY",
+								"value": "{{API_KEY}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"My Updated Runbook\",\n  \"description\": \"This runbook has been updated.\",\n  \"tags\": [\"postman\", \"updated\"],\n  \"blocks\": [\n    {\n      \"id\": \"f3d8b8a8-8b8a-4b8a-8b8a-8b8a8b8a8b8a\",\n      \"name\": \"Say Hello Updated\",\n      \"type\": \"command\",\n      \"config\": {\n        \"command\": \"echo 'Hello, Updated World!'\"\n      },\n      \"order\": 1\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/runbooks/{{RUNBOOK_ID}}",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"runbooks",
+								"{{RUNBOOK_ID}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Runbook",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "X-API-KEY",
+								"value": "{{API_KEY}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/runbooks/{{RUNBOOK_ID}}",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"runbooks",
+								"{{RUNBOOK_ID}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Execution",
+			"item": [
+				{
+					"name": "Execute Full Runbook",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"JOB_ID\", jsonData.job_id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-API-KEY",
+								"value": "{{API_KEY}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"runbook_id\": \"{{RUNBOOK_ID}}\",\n    \"block\": {\n        \"id\": \"f3d8b8a8-8b8a-4b8a-8b8a-8b8a8b8a8b8a\",\n        \"name\": \"Test API Call\",\n        \"type\": \"api\",\n        \"config\": {\n            \"method\": \"GET\",\n            \"url\": \"https://httpbin.org/get\",\n            \"credential_id\": \"{{CREDENTIAL_ID}}\",\n            \"auth_header_name\": \"X-Custom-Header\"\n        },\n        \"order\": 1\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/runbooks/{{RUNBOOK_ID}}/execute",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"runbooks",
+								"{{RUNBOOK_ID}}",
+								"execute"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Execution Status",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-KEY",
+								"value": "{{API_KEY}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/executions/{{JOB_ID}}",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"executions",
+								"{{JOB_ID}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Execute Single Block",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-API-KEY",
+								"value": "{{API_KEY}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"runbook_id\": \"{{RUNBOOK_ID}}\",\n    \"block\": {\n        \"id\": \"f3d8b8a8-8b8a-4b8a-8b8a-8b8a8b8a8b8a\",\n        \"name\": \"Test API Call\",\n        \"type\": \"api\",\n        \"config\": {\n            \"method\": \"GET\",\n            \"url\": \"https://httpbin.org/get\",\n            \"credential_id\": \"{{CREDENTIAL_ID}}\",\n            \"auth_header_name\": \"X-Custom-Header\"\n        },\n        \"order\": 1\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/blocks/execute",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"blocks",
+								"execute"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Credentials",
+			"item": [
+				{
+					"name": "Create Credential",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"CREDENTIAL_ID\", jsonData.id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-API-KEY",
+								"value": "{{API_KEY}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"My API Token\",\n  \"type\": \"api\",\n  \"secret\": \"my-super-secret-token\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/credentials",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"credentials"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "List Credentials",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-KEY",
+								"value": "{{API_KEY}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/credentials",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"credentials"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Credential",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "X-API-KEY",
+								"value": "{{API_KEY}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/credentials/{{CREDENTIAL_ID}}",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"credentials",
+								"{{CREDENTIAL_ID}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "BASE_URL",
+			"value": "http://localhost:8000",
+			"type": "string"
+		},
+		{
+			"key": "API_KEY",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "RUNBOOK_ID",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "JOB_ID",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "CREDENTIAL_ID",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
