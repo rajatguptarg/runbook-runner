@@ -1,9 +1,23 @@
 version: '3'
+
+networks:
+  runbook-network:
+    driver: bridge
+
 services:
   mongo:
     image: mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: runbook
+      MONGO_INITDB_ROOT_PASSWORD: secret
+      MONGO_INITDB_DATABASE: runbook
+    restart: always
+    container_name: mongo
+    networks:
+      - runbook-network
     volumes:
       - mongo-data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     ports:
       - "27017:27017"
   app:
@@ -13,8 +27,15 @@ services:
       DB_PASSWORD: secret
       DB_HOST: mongo
       DB_NAME: runbook
+      DB_CONNECTION: "mongodb://runbook:secret@mongo:27017/runbook?authSource=runbook"
     depends_on:
       - mongo
+    networks:
+      - runbook-network
+    container_name: runbook-app
+    volumes:
+      - .:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     ports:
       - "8000:8000"
 volumes:
