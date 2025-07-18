@@ -74,8 +74,8 @@ async def test_enqueue_execution(client: TestClient, sre_token: str, runbook_id:
     assert job.status == "pending"
 
     runbook = await Runbook.get(UUID(runbook_id))
-    # This is a bit indirect, but we check if the job's version_id
-    # is one of the runbook's versions
+    # This is a bit indirect, but we check if the job's
+    # version_id is one of the runbook's versions
     # For this test, there is only one version.
     from app.models import RunbookVersion
 

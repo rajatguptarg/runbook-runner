@@ -75,6 +75,12 @@ async def run_job(job: ExecutionJob):
     sorted_blocks = sorted(version.blocks, key=lambda b: b.order)
 
     for block in sorted_blocks:
+        # Check if the job has been externally stopped
+        current_job_status = await ExecutionJob.get(job.id)
+        if current_job_status.status != "running":
+            logger.info(f"Job {job.id} was stopped externally. Halting execution.")
+            return
+
         success = False
         if block.type == "command":
             success = await process_command_block(job, block)

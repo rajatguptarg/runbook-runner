@@ -163,16 +163,21 @@ Authentication is handled via an `X-API-KEY` header. Users can obtain an API key
 ### Execution
 
 -   **POST** `/runbooks/{id}/execute`
-    -   **Description**: Enqueue a new execution job for a runbook.
+    -   **Description**: Enqueue a new execution job for the latest version of a runbook.
     -   **Authentication**: Required.
+    -   **Response**: `ExecutionResponse` with the `job_id` of the created job.
 
 -   **GET** `/executions/{job_id}`
-    -   **Description**: Get the status and output of an execution job.
+    -   **Description**: Get the status and all step outputs for a specific execution job.
     -   **Authentication**: Required.
+    -   **Response**: `ExecutionStatusResponse` object containing `job_id`, `status`, and a list of `ExecutionStep` objects.
 
 -   **POST** `/executions/{job_id}/control`
-    -   **Description**: Pause, resume, or stop a job.
+    -   **Description**: Send a control command to a job. Currently, only "stop" is supported.
     -   **Authentication**: Required.
+    -   **Body**: `ControlRequest`
+        -   `action` (str): The action to perform (e.g., "stop").
+    -   **Response**: `202 Accepted` on success.
 
 ### Credentials
 
