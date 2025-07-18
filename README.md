@@ -53,6 +53,23 @@ The system follows a 3-tier architecture:
 - **Logging**: Loguru
 - **Testing**: Pytest, TestClient, Cypress/Playwright
 
+## Project Status
+
+This project is under active development. The backend API is functionally complete, and the frontend is in progress.
+
+**Implemented Features:**
+*   **Backend:**
+    *   User authentication and authorization (API Key-based).
+    *   Complete CRUD operations for Runbooks, Versions, and Credentials.
+    *   Secure credential storage with encryption at rest.
+    *   An execution engine that processes runbook blocks, including commands, API calls, conditionals, and timers.
+    *   API endpoints for enqueuing, monitoring, and stopping executions.
+    *   Comprehensive audit logging for all state-changing operations.
+    *   Structured JSON logging and a Prometheus metrics endpoint (`/metrics`).
+*   **Frontend:**
+    *   Project scaffolded with Create React App, including routing and API service configuration.
+    *   A Runbook List page that successfully fetches and displays runbooks from the backend API.
+
 ## Development Setup
 
 ### Backend
