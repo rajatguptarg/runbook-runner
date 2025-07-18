@@ -1,8 +1,9 @@
 fastapi
 uvicorn[standard]
-sqlmodel
+beanie
 pydantic
 loguru
 pre-commit
 pytest
 httpx
+pymongo[srv]

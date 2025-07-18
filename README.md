@@ -28,9 +28,9 @@ The project specifications can be found in the `spec/` directory:
 The system follows a 3-tier architecture:
 
 ```
-┌──────────────┐      HTTPS/API      ┌───────────────┐      SQL      ┌─────────────┐
+┌──────────────┐      HTTPS/API      ┌───────────────┐           ┌─────────────┐
 │  Browser UI  │ ──────────────────▶ │  FastAPI App  │ ◀──────────▶ │  Database   │
-│   (React)    │                      │               │               │ (PostgreSQL)│
+│   (React)    │                      │               │               │  (MongoDB)  │
 └──────────────┘                      └───────────────┘               └─────────────┘
                                                 │
                                                 ▼
@@ -43,13 +43,13 @@ The system follows a 3-tier architecture:
 - **Frontend**: A React Single Page Application (SPA) providing a user-friendly interface for runbook management and execution.
 - **Backend**: A FastAPI application that exposes a REST API, handles business logic, and manages the execution engine.
 - **Execution Engine**: A background worker that processes execution jobs, runs commands, and captures outputs.
-- **Database**: A PostgreSQL database for persisting runbooks, versions, execution history, and encrypted credentials.
+- **Database**: A MongoDB database for persisting runbooks, versions, execution history, and encrypted credentials.
 
 ## Tech Stack
 
-- **Backend**: Python 3.11, FastAPI, SQLModel, Pydantic, Alembic
+- **Backend**: Python 3.11, FastAPI, Beanie, Pydantic
 - **Frontend**: React, React Router, Axios
-- **Database**: PostgreSQL
+- **Database**: MongoDB
 - **Logging**: Loguru
 - **Testing**: Pytest, TestClient, Cypress/Playwright
 
@@ -68,9 +68,8 @@ The system follows a 3-tier architecture:
     ```sh
     pre-commit install
     ```
-4.  Set up environment variables for the PostgreSQL connection (e.g., in a `.env` file).
-5.  Run database migrations using Alembic (not yet configured).
-6.  Run the application:
+4.  Set up environment variables for the MongoDB connection (e.g., in a `.env` file).
+5.  Run the application:
     ```sh
     uvicorn app.main:app --reload
     ```

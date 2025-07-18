@@ -112,7 +112,7 @@ This document captures the detailed requirements for a web-based Runbook applica
 
 **N5. Maintainability**
 
-* Codebase structured with FastAPI, Pydantic models, SQLModel ORM, and Loguru logging.
+* Codebase structured with FastAPI, Pydantic models, Beanie ODM, and Loguru logging.
 * Comprehensive unit and integration tests.
 
 **N6. Compliance**
@@ -133,7 +133,7 @@ This document captures the detailed requirements for a web-based Runbook applica
 
 * Users authenticate via API key header (`X-API-KEY`).
 * Backend hosted on environment with shell access to target hosts.
-* PostgreSQL (or compatible) database for persistence.
+* MongoDB (or compatible) database for persistence.
 * No existing runbook/versioning system in place.
 
 ---

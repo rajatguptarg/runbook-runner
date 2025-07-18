@@ -7,9 +7,9 @@
 **Diagram:**
 
 ```
-┌──────────────┐      HTTPS/API      ┌───────────────┐      SQL      ┌─────────────┐
+┌──────────────┐      HTTPS/API      ┌───────────────┐           ┌─────────────┐
 │  Browser UI  │ ──────────────────▶ │  FastAPI App  │ ◀──────────▶ │  Database   │
-│ (React/Vue)  │                      │               │               │ (PostgreSQL)│
+│ (React/Vue)  │                      │               │               │  (MongoDB)  │
 └──────────────┘                      └───────────────┘               └─────────────┘
         │                                       │
         │ WebSocket Polling (REST Polling)      │
@@ -33,8 +33,8 @@
 * The **Browser UI** (built with React) communicates via HTTPS to the FastAPI backend.
 * The **FastAPI App** handles authentication, CRUD operations, and dispatching executions.
 * An **Execution Engine Worker** (separate process/module) pulls pending execution jobs, runs shell commands or API calls, and writes outputs back to the database.
-* **PostgreSQL** stores runbook definitions, versions, user data, credentials (encrypted), and execution logs.
-* **Credential Vault**: a secure table in the database encrypted by an application-managed key; accessible only via FastAPI with RBAC.
+* **MongoDB** stores runbook definitions, versions, user data, credentials (encrypted), and execution logs.
+* **Credential Vault**: a secure collection in the database encrypted by an application-managed key; accessible only via FastAPI with RBAC.
 
 ---
 
@@ -44,7 +44,7 @@
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | API Layer (FastAPI)  | Exposes REST endpoints for runbook CRUD, execution control, credentials, and history. Implements RBAC and input validation via Pydantic. |
 | Execution Service    | Polls execution queue, runs steps, captures stdout/stderr/exit codes, updates status.                                                    |
-| Persistence Layer    | SQLModel ORM mapping of Runbook, Version, Block, Execution, Credential models to PostgreSQL tables.                                      |
+| Persistence Layer    | Beanie ODM mapping of Runbook, Version, Block, Execution, Credential models to MongoDB documents.                                     |
 | Auth & RBAC          | API-key–based authentication; roles enforced at endpoint level.                                                                          |
 | Frontend App         | React SPA with components: RunbookList, RunbookEditor, ExecutionViewer. Communicates with backend via Axios.                             |
 | Logging & Monitoring | Loguru for structured logs; metrics exported (via Prometheus client) for uptime and execution durations.                                 |
@@ -54,50 +54,72 @@
 ## 3. Data Models & Schemas
 
 ```python
-class Runbook(SQLModel, table=True):
-    id: UUID = Field(default_factory=uuid4, primary_key=True)
+from beanie import Document, Indexed
+from pydantic import BaseModel, Field
+from typing import List, Dict, Any, Optional
+from uuid import UUID, uuid4
+from datetime import datetime
+from typing_extensions import Literal
+
+class Runbook(Document):
+    id: UUID = Field(default_factory=uuid4)
     title: str
     description: str
     created_by: UUID
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
-class RunbookVersion(SQLModel, table=True):
-    id: UUID = Field(default_factory=uuid4, primary_key=True)
-    runbook_id: UUID = Field(foreign_key="runbook.id")
+    class Settings:
+        name = "runbooks"
+
+class RunbookVersion(Document):
+    id: UUID = Field(default_factory=uuid4)
+    runbook_id: Indexed(UUID)
     version_number: int
-    blocks: List[Block]  # JSON column
-    created_at: datetime
+    blocks: List['Block']  # Embedded documents
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Settings:
+        name = "runbook_versions"
 
 class Block(BaseModel):
-    id: UUID
+    id: UUID = Field(default_factory=uuid4)
     type: Literal['instruction','command','api','condition','timer']
     config: Dict[str, Any]
     order: int
 
-class ExecutionJob(SQLModel, table=True):
-    id: UUID = Field(default_factory=uuid4, primary_key=True)
-    version_id: UUID = Field(foreign_key="runbookversion.id")
+class ExecutionJob(Document):
+    id: UUID = Field(default_factory=uuid4)
+    version_id: Indexed(UUID)
     status: Literal['pending','running','completed','failed']
-    start_time: datetime
-    end_time: Optional[datetime]
+    start_time: datetime = Field(default_factory=datetime.utcnow)
+    end_time: Optional[datetime] = None
 
-class ExecutionStep(SQLModel, table=True):
-    id: UUID = Field(default_factory=uuid4, primary_key=True)
-    job_id: UUID = Field(foreign_key="executionjob.id")
+    class Settings:
+        name = "execution_jobs"
+
+class ExecutionStep(Document):
+    id: UUID = Field(default_factory=uuid4)
+    job_id: Indexed(UUID)
     block_id: UUID
     status: Literal['pending','running','success','error']
     output: str  # stdout+stderr
     exit_code: int
-    timestamp: datetime
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
 
-class Credential(SQLModel, table=True):
-    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    class Settings:
+        name = "execution_steps"
+
+class Credential(Document):
+    id: UUID = Field(default_factory=uuid4)
     name: str
     type: Literal['ssh','api']
     encrypted_secret: str
     created_by: UUID
-    created_at: datetime
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Settings:
+        name = "credentials"
 ```
 
 ---
@@ -168,7 +190,7 @@ class Credential(SQLModel, table=True):
 ## 8. Testing Strategy
 
 * **Unit Tests:** Pydantic model validation, individual block execution logic.
-* **Integration Tests:** FastAPI endpoints with TestClient; in-memory SQLite for database.
+* **Integration Tests**: FastAPI endpoints with TestClient; mock MongoDB (e.g., using `mongomock`).
 * **E2E Tests:** Simulate runbook creation and execution using a Dockerized local shell environment.
 
 *End of Technical Design Document.*

@@ -16,14 +16,14 @@ The details are:
 The system follows a 3-tier architecture:
 
 1. **Frontend**: React SPA with components for RunbookList, RunbookEditor, and ExecutionViewer
-2. **Backend**: FastAPI application with SQLModel ORM and PostgreSQL database
+2. **Backend**: FastAPI application with Beanie ODM and MongoDB database
 3. **Execution Engine**: Background worker that processes execution jobs and runs commands
 
 ### Key Components
 
 - **API Layer**: FastAPI with Pydantic validation and RBAC enforcement
 - **Execution Service**: Polls execution queue, runs steps, captures outputs
-- **Persistence Layer**: SQLModel ORM with PostgreSQL for runbooks, versions, executions, credentials
+- **Persistence Layer**: Beanie ODM with MongoDB for runbooks, versions, executions, credentials
 - **Authentication**: API-key based with role-based access control
 
 ## Data Models
@@ -42,9 +42,8 @@ Since this is a new project without existing code, you'll need to:
 
 1. **Backend Setup**:
    - Create Python 3.13 environment
-   - Install FastAPI, SQLModel, Pydantic, Loguru
-   - Set up PostgreSQL connection via environment variables
-   - Configure Alembic for database migrations
+   - Install FastAPI, Beanie, Pydantic, Loguru
+   - Set up MongoDB connection via environment variables
 
 2. **Frontend Setup**:
    - Initialize React application
