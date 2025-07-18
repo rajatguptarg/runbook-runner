@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { Form, Button, Row, Col } from 'react-bootstrap';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { getRunbookDetails, updateRunbook } from '../services/api';
+import { getRunbookDetails, updateRunbook, getCredentials } from '../services/api';
 import Block from '../components/Block';
 import EditBlockModal from '../components/EditBlockModal';
 import { v4 as uuidv4 } from 'uuid';
@@ -14,6 +14,7 @@ function RunbookEditor() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [blocks, setBlocks] = useState([]);
+  const [credentials, setCredentials] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -22,31 +23,31 @@ function RunbookEditor() {
   const [editingBlock, setEditingBlock] = useState(null);
 
   useEffect(() => {
-    const fetchRunbook = async () => {
+    const fetchRunbookAndCredentials = async () => {
       try {
-        const MOCK_API_KEY = 'dev-key';
-        const config = { headers: { 'X-API-KEY': MOCK_API_KEY } };
-        const { data } = await getRunbookDetails(runbookId, config);
-        setTitle(data.title);
-        setDescription(data.description);
-        setBlocks(data.blocks);
-        setLoading(false);
+        const [runbookRes, credentialsRes] = await Promise.all([
+          getRunbookDetails(runbookId),
+          getCredentials(),
+        ]);
+        setTitle(runbookRes.data.title);
+        setDescription(runbookRes.data.description);
+        setBlocks(runbookRes.data.blocks);
+        setCredentials(credentialsRes.data);
       } catch (err) {
         setError('Failed to fetch runbook details.');
-        setLoading(false);
         console.error(err);
+      } finally {
+        setLoading(false);
       }
     };
-    fetchRunbook();
+    fetchRunbookAndCredentials();
   }, [runbookId]);
 
   const handleSave = async (e) => {
     e.preventDefault();
     try {
-      const MOCK_API_KEY = 'dev-key';
-      const config = { headers: { 'X-API-KEY': MOCK_API_KEY } };
       const runbookData = { title, description, blocks };
-      await updateRunbook(runbookId, runbookData, config);
+      await updateRunbook(runbookId, runbookData);
       navigate('/');
     } catch (err) {
       setError('Failed to save runbook.');
@@ -181,6 +182,7 @@ function RunbookEditor() {
         onHide={closeModal}
         block={editingBlock}
         onSave={saveBlock}
+        credentials={credentials}
       />
     </>
   );

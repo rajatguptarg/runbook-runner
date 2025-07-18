@@ -223,7 +223,7 @@ async def test_run_api_block_with_credential(mock_request):
     mock_request.assert_called_once()
     call_kwargs = mock_request.call_args.kwargs
     assert "headers" in call_kwargs
-    assert call_kwargs["headers"]["Authorization"] == "Bearer my-secret-token"
+    assert call_kwargs["headers"]["Authorization"] == "my-secret-token"
 
 
 @pytest.mark.asyncio

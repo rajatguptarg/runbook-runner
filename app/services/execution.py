@@ -38,7 +38,8 @@ async def process_api_block(job: ExecutionJob, block: Block) -> bool:
         cred = await Credential.get(credential_id)
         if cred and cred.type == "api":
             token = decrypt_secret(cred.encrypted_secret)
-            headers["Authorization"] = f"Bearer {token}"
+            header_name = config.get("auth_header_name") or "Authorization"
+            headers[header_name] = token
 
     try:
         async with httpx.AsyncClient() as client:

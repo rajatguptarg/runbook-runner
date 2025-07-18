@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form } from 'react-bootstrap';
 
-function EditBlockModal({ show, onHide, block, onSave }) {
+function EditBlockModal({ show, onHide, block, onSave, credentials }) {
   const [config, setConfig] = useState({});
   const [name, setName] = useState('');
 
@@ -72,6 +72,37 @@ function EditBlockModal({ show, onHide, block, onSave }) {
                 onChange={(e) => setConfig({ ...config, url: e.target.value })}
               />
             </Form.Group>
+            <hr />
+            <h5>Authentication</h5>
+            <Form.Group controlId="credential">
+              <Form.Label>Credential</Form.Label>
+              <Form.Control
+                as="select"
+                value={config.credential_id || ''}
+                onChange={(e) =>
+                  setConfig({ ...config, credential_id: e.target.value })
+                }
+              >
+                <option value="">None</option>
+                {credentials?.map((cred) => (
+                  <option key={cred.id} value={cred.id}>
+                    {cred.name}
+                  </option>
+                ))}
+              </Form.Control>
+            </Form.Group>
+            <Form.Group controlId="authHeaderName" className="mt-3">
+              <Form.Label>Header Name</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Authorization"
+                value={config.auth_header_name || ''}
+                onChange={(e) =>
+                  setConfig({ ...config, auth_header_name: e.target.value })
+                }
+              />
+            </Form.Group>
+
           </>
         );
       default:
