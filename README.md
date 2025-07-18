@@ -88,11 +88,16 @@ The system follows a 3-tier architecture:
     ```sh
     cd frontend
     ```
-2.  Install dependencies:
+2.  Create a `.env` file by copying the example:
+    ```sh
+    cp .env.example .env
+    ```
+3.  (Optional) Modify the `REACT_APP_API_BASE_URL` in the `.env` file if your backend is running on a different URL.
+4.  Install dependencies:
     ```sh
     npm install
     ```
-3.  Start the development server:
+5.  Start the development server:
     ```sh
     npm start
     ```
