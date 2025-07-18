@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Optional
 from uuid import UUID, uuid4
 
@@ -13,7 +13,7 @@ class ExecutionJob(Document):
     runbook_id: UUID
     version_id: UUID
     status: Literal["pending", "running", "completed", "failed"]
-    start_time: datetime = Field(default_factory=datetime.utcnow)
+    start_time: datetime = Field(default_factory=lambda: datetime.now(UTC))
     end_time: Optional[datetime] = None
 
     class Settings:
@@ -31,7 +31,7 @@ class ExecutionStep(Document):
     status: Literal["pending", "running", "success", "error"]
     output: str  # stdout+stderr
     exit_code: int
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     class Settings:
         name = "execution_steps"

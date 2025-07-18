@@ -22,13 +22,28 @@ from app.models import (
 )
 from app.services.execution import execution_worker
 
+from contextlib import asynccontextmanager
+
+
 # Apply logging configuration
 setup_logging()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Initialize the database and start the background worker.
+    """
+    await init_db()
+    asyncio.create_task(execution_worker())
+    yield
+
 
 app = FastAPI(
     title="Runbook Studio",
     description="A web-based application for actionable runbooks.",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 # CORS Middleware
@@ -53,15 +68,6 @@ document_models = [
     AuditLog,
 ]
 init_db = create_init_beanie(document_models)
-
-
-@app.on_event("startup")
-async def on_startup():
-    """
-    Initialize the database and start the background worker.
-    """
-    await init_db()
-    asyncio.create_task(execution_worker())
 
 
 @app.get("/", summary="Health check")

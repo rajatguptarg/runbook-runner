@@ -15,7 +15,9 @@ class SignupRequest(BaseModel):
 
 
 class SignupResponse(BaseModel):
-    api_key: str = Field(..., example="a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6")
+    api_key: str = Field(
+        ..., json_schema_extra={"example": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6"}
+    )
 
 
 class LoginRequest(BaseModel):
@@ -24,11 +26,13 @@ class LoginRequest(BaseModel):
 
 
 class LoginResponse(BaseModel):
-    api_key: str = Field(..., example="a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6")
+    api_key: str = Field(
+        ..., json_schema_extra={"example": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6"}
+    )
 
 
 class LogoutResponse(BaseModel):
-    detail: str = Field(..., example="Logged out")
+    detail: str = Field(..., json_schema_extra={"example": "Logged out"})
 
 
 @router.post(

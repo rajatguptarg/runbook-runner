@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Dict, Any, Optional
 from uuid import UUID, uuid4
 
@@ -8,7 +8,7 @@ from pydantic import Field
 
 class AuditLog(Document):
     id: UUID = Field(default_factory=uuid4)
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
     user_id: UUID
     action: str  # e.g., "create_runbook", "delete_credential"
     target_id: UUID

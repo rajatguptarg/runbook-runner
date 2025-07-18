@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import List
 from uuid import UUID
 
@@ -188,7 +188,7 @@ async def update_runbook(
 
     runbook.title = data.title
     runbook.description = data.description
-    runbook.updated_at = datetime.utcnow()
+    runbook.updated_at = datetime.now(UTC)
     await runbook.save()
 
     await log_action(

@@ -49,7 +49,7 @@ async def test_run_job_success():
     )
     await version.insert()
 
-    job = ExecutionJob(version_id=version.id, status="pending")
+    job = ExecutionJob(runbook_id=runbook.id, version_id=version.id, status="pending")
     await job.insert()
 
     # 2. Mock the subprocess call
@@ -107,7 +107,7 @@ async def test_run_job_failure():
     )
     await version.insert()
 
-    job = ExecutionJob(version_id=version.id, status="pending")
+    job = ExecutionJob(runbook_id=runbook.id, version_id=version.id, status="pending")
     await job.insert()
 
     # 2. Mock subprocess
@@ -162,7 +162,7 @@ async def test_run_api_block_success(mock_request):
         ],
     )
     await version.insert()
-    job = ExecutionJob(version_id=version.id, status="pending")
+    job = ExecutionJob(runbook_id=runbook.id, version_id=version.id, status="pending")
     await job.insert()
 
     # 2. Run job
@@ -210,7 +210,7 @@ async def test_run_api_block_with_credential(mock_request):
         ],
     )
     await version.insert()
-    job = ExecutionJob(version_id=version.id, status="pending")
+    job = ExecutionJob(runbook_id=runbook.id, version_id=version.id, status="pending")
     await job.insert()
 
     # 2. Run job
@@ -244,7 +244,7 @@ async def test_run_condition_block_true():
         ],
     )
     await version.insert()
-    job = ExecutionJob(version_id=version.id, status="pending")
+    job = ExecutionJob(runbook_id=runbook.id, version_id=version.id, status="pending")
     await job.insert()
 
     # 2. Mock subprocess
@@ -281,7 +281,7 @@ async def test_run_condition_block_false():
         ],
     )
     await version.insert()
-    job = ExecutionJob(version_id=version.id, status="pending")
+    job = ExecutionJob(runbook_id=runbook.id, version_id=version.id, status="pending")
     await job.insert()
 
     # 2. Mock subprocess
@@ -312,7 +312,7 @@ async def test_run_timer_block(mock_sleep):
         blocks=[Block(type="timer", config={"duration": 5}, order=1)],
     )
     await version.insert()
-    job = ExecutionJob(version_id=version.id, status="pending")
+    job = ExecutionJob(runbook_id=runbook.id, version_id=version.id, status="pending")
     await job.insert()
 
     # 2. Run job

@@ -57,7 +57,7 @@ async def pending_job(sre_token: str) -> ExecutionJob:
         blocks=[Block(type="command", config={"command": "echo 'hello'"}, order=1)],
     )
     await version.insert()
-    job = ExecutionJob(version_id=version.id, status="pending")
+    job = ExecutionJob(runbook_id=runbook.id, version_id=version.id, status="pending")
     await job.insert()
     return job
 

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, UTC
 from uuid import UUID, uuid4
 
 from beanie import Document
@@ -12,7 +12,7 @@ class Credential(Document):
     type: Literal["ssh", "api"]
     encrypted_secret: str
     created_by: UUID
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     class Settings:
         name = "credentials"
