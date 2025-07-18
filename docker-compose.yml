@@ -1,0 +1,21 @@
+version: '3'
+services:
+  mongo:
+    image: mongo
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - "27017:27017"
+  app:
+    build: .
+    environment:
+      DB_USER: runbook
+      DB_PASSWORD: secret
+      DB_HOST: mongo
+      DB_NAME: runbook
+    depends_on:
+      - mongo
+    ports:
+      - "8000:8000"
+volumes:
+  mongo-data:

@@ -35,8 +35,6 @@ pytest
 python-dotenv
 PyYAML
 sniffio
-SQLAlchemy
-sqlmodel
 starlette
 typing-inspection
 typing_extensions
@@ -45,3 +43,5 @@ uvloop
 virtualenv
 watchfiles
 websockets
+mongomock
+mongomock_motor

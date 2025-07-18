@@ -68,7 +68,7 @@ The system follows a 3-tier architecture:
     ```sh
     pre-commit install
     ```
-4.  Configure the MongoDB connection using environment variables. Define the following values (e.g., in a `.env` file):
+4.  Copy `.env.example` to `.env` and configure the connection settings. The file defines the following values:
     - `DB_USER` and `DB_PASSWORD` – credentials for the database.
     - `DB_HOST` – MongoDB host (defaults to `localhost` if omitted).
     - `DB_NAME` – name of the database.
@@ -77,12 +77,7 @@ The system follows a 3-tier architecture:
     ```sh
     uvicorn app.main:app --reload
     ```
-6.  Register the Beanie initialization handler in your FastAPI app:
-    ```python
-    from app.db import create_init_beanie
-
-    app.add_event_handler("startup", create_init_beanie([]))
-    ```
+6.  The application initializes its MongoDB database on startup.
 
 ## Testing
 
@@ -93,7 +88,7 @@ pytest
 
 ## API Endpoints
 
-Authentication is handled via an `X-API-KEY` header.
+Authentication is handled via an `X-API-KEY` header. Users obtain an API key by signing up and logging in. API keys and user roles are stored in the MongoDB database.
 
 - `GET /runbooks`: List all runbooks.
 - `POST /runbooks`: Create a new runbook.
