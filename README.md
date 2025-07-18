@@ -55,6 +55,8 @@ The system follows a 3-tier architecture:
 
 ## Development Setup
 
+### Backend
+
 1.  Create and activate a Python virtual environment:
     ```sh
     python3 -m venv .venv
@@ -80,11 +82,45 @@ The system follows a 3-tier architecture:
     ```
 6.  The application initializes its MongoDB database on startup.
 
+### Frontend
+
+1.  Navigate to the `frontend` directory:
+    ```sh
+    cd frontend
+    ```
+2.  Install dependencies:
+    ```sh
+    npm install
+    ```
+3.  Start the development server:
+    ```sh
+    npm start
+    ```
+    The application will be available at `http://localhost:3000`.
+
+## Docker
+
+To run the entire application stack (backend, frontend, and database) using Docker, use the following command:
+```sh
+docker-compose up --build
+```
+- The backend will be available at `http://localhost:8000`.
+- The frontend will be available at `http://localhost:3000`.
+
 ## Testing
 
-To run the test suite, use `pytest`:
+### Backend
+
+To run the backend test suite, use `pytest`:
 ```sh
 pytest
+```
+
+### Frontend
+
+To run the frontend tests, navigate to the `frontend` directory and run:
+```sh
+npm test
 ```
 
 ## API Documentation
