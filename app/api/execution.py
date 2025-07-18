@@ -88,6 +88,8 @@ async def list_all_executions(_=auth):
     jobs = await ExecutionJob.find_all().sort("-start_time").to_list()
     results = []
     for job in jobs:
+        if not job.runbook_id:  # Gracefully handle old data
+            continue
         runbook = await Runbook.get(job.runbook_id)
         title = runbook.title if runbook else "Unknown Runbook"
         job_dict = job.model_dump()
