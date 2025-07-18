@@ -57,13 +57,25 @@ The system follows a 3-tier architecture:
 
 ### Backend
 
-1.  Create and activate a Python 3.13 virtual environment.
+1.  Create and activate a Python 3.13 virtual environment:
+    ```sh
+    python3.13 -m venv .venv
+    source .venv/bin/activate
+    ```
 2.  Install dependencies:
     ```sh
-    pip install fastapi "uvicorn[standard]" sqlmodel pydantic loguru alembic
+    pip install fastapi "uvicorn[standard]" sqlmodel pydantic loguru pre-commit
     ```
-3.  Set up environment variables for the PostgreSQL connection (e.g., in a `.env` file).
-4.  Run database migrations using Alembic.
+3.  Install pre-commit hooks:
+    ```sh
+    pre-commit install
+    ```
+4.  Set up environment variables for the PostgreSQL connection (e.g., in a `.env` file).
+5.  Run database migrations using Alembic.
+6.  Run the application:
+    ```sh
+    uvicorn app.main:app --reload
+    ```
 
 ### Frontend
 
