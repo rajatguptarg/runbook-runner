@@ -18,6 +18,8 @@ function RunbookEditor() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const [tags, setTags] = useState([]);
+
   // Modal state
   const [showModal, setShowModal] = useState(false);
   const [editingBlock, setEditingBlock] = useState(null);
@@ -32,6 +34,7 @@ function RunbookEditor() {
         setTitle(runbookRes.data.title);
         setDescription(runbookRes.data.description);
         setBlocks(runbookRes.data.blocks);
+        setTags(runbookRes.data.tags || []);
         setCredentials(credentialsRes.data);
       } catch (err) {
         setError('Failed to fetch runbook details.');
@@ -46,7 +49,7 @@ function RunbookEditor() {
   const handleSave = async (e) => {
     e.preventDefault();
     try {
-      const runbookData = { title, description, blocks };
+      const runbookData = { title, description, blocks, tags };
       await updateRunbook(runbookId, runbookData);
       navigate('/');
     } catch (err) {
@@ -125,6 +128,16 @@ function RunbookEditor() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             required
+          ></Form.Control>
+        </Form.Group>
+
+        <Form.Group controlId="tags" className="mt-3">
+          <Form.Label>Tags</Form.Label>
+          <Form.Control
+            type="text"
+            placeholder="Enter comma-separated tags"
+            value={tags.join(', ')}
+            onChange={(e) => setTags(e.target.value.split(',').map((tag) => tag.trim()))}
           ></Form.Control>
         </Form.Group>
 

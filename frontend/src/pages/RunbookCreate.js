@@ -6,6 +6,7 @@ import { createRunbook } from '../services/api';
 function RunbookCreate() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [tags, setTags] = useState([]);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
@@ -17,6 +18,7 @@ function RunbookCreate() {
       const runbookData = {
         title,
         description,
+        tags,
         blocks: [], // Start with an empty runbook
       };
       await createRunbook(runbookData);
@@ -46,7 +48,7 @@ function RunbookCreate() {
           ></Form.Control>
         </Form.Group>
 
-        <Form.Group controlId="description">
+        <Form.Group controlId="description" className="mt-3">
           <Form.Label>Description</Form.Label>
           <Form.Control
             as="textarea"
@@ -55,6 +57,18 @@ function RunbookCreate() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             required
+          ></Form.Control>
+        </Form.Group>
+
+        <Form.Group controlId="tags" className="mt-3">
+          <Form.Label>Tags</Form.Label>
+          <Form.Control
+            type="text"
+            placeholder="Enter comma-separated tags"
+            value={tags.join(', ')}
+            onChange={(e) =>
+              setTags(e.target.value.split(',').map((tag) => tag.trim()))
+            }
           ></Form.Control>
         </Form.Group>
 

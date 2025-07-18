@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Button, Row, Col, Spinner } from 'react-bootstrap';
+import { Button, Row, Col, Spinner, Badge } from 'react-bootstrap';
 import { getRunbookDetails } from '../services/api';
 import Block from '../components/Block';
 
@@ -37,6 +37,13 @@ function RunbookViewer() {
         <Col>
           <h1>{runbook.title}</h1>
           <ReactMarkdown>{runbook.description}</ReactMarkdown>
+          <div>
+            {runbook.tags && runbook.tags.map((tag) => (
+              <Badge key={tag} pill bg="secondary" className="me-1">
+                {tag}
+              </Badge>
+            ))}
+          </div>
         </Col>
         <Col className="text-end">
           <Link to={`/runbooks/${runbook.id}/edit`} className="btn btn-primary">

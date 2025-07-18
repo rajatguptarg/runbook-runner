@@ -20,12 +20,14 @@ class RunbookCreate(BaseModel):
     title: str
     description: str
     blocks: List[Block] = []
+    tags: List[str] = []
 
 
 class RunbookUpdate(BaseModel):
     title: str
     description: str
     blocks: List[Block]
+    tags: List[str] = []
 
 
 class RunbookRead(BaseModel):
@@ -37,6 +39,7 @@ class RunbookRead(BaseModel):
     updated_at: datetime
     version: int
     blocks: List[Block]
+    tags: List[str] = []
 
 
 # Dependency for authorization
@@ -61,6 +64,7 @@ async def create_runbook(
         title=data.title,
         description=data.description,
         created_by=current_user.id,
+        tags=data.tags,
     )
     await runbook.insert()
 
@@ -188,6 +192,7 @@ async def update_runbook(
 
     runbook.title = data.title
     runbook.description = data.description
+    runbook.tags = data.tags
     runbook.updated_at = datetime.now(UTC)
     await runbook.save()
 

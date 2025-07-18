@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { LinkContainer } from 'react-router-bootstrap';
-import { Table, Button, Row, Col } from 'react-bootstrap';
+import { Table, Button, Row, Col, Badge } from 'react-bootstrap';
 import { getRunbooks, executeRunbook } from '../services/api';
 
 function RunbookList() {
@@ -56,6 +56,7 @@ function RunbookList() {
           <tr>
             <th>TITLE</th>
             <th>DESCRIPTION</th>
+            <th>TAGS</th>
             <th>VERSION</th>
             <th>ACTIONS</th>
           </tr>
@@ -67,6 +68,13 @@ function RunbookList() {
                 <Link to={`/runbooks/${runbook.id}`}>{runbook.title}</Link>
               </td>
               <td>{runbook.description}</td>
+              <td>
+                {runbook.tags && runbook.tags.map((tag) => (
+                  <Badge key={tag} pill bg="secondary" className="me-1">
+                    {tag}
+                  </Badge>
+                ))}
+              </td>
               <td>{runbook.version}</td>
               <td>
                 <Link to={`/runbooks/${runbook.id}/edit`}>
