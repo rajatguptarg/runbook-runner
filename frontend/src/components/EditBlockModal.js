@@ -3,15 +3,17 @@ import { Modal, Button, Form } from 'react-bootstrap';
 
 function EditBlockModal({ show, onHide, block, onSave }) {
   const [config, setConfig] = useState({});
+  const [name, setName] = useState('');
 
   useEffect(() => {
     if (block) {
       setConfig(block.config);
+      setName(block.name || '');
     }
   }, [block]);
 
   const handleSave = () => {
-    onSave(block.id, config);
+    onSave(block.id, config, name);
     onHide();
   };
 
@@ -38,7 +40,9 @@ function EditBlockModal({ show, onHide, block, onSave }) {
             <Form.Control
               type="text"
               value={config.command || ''}
-              onChange={(e) => setConfig({ ...config, command: e.target.value })}
+              onChange={(e) =>
+                setConfig({ ...config, command: e.target.value })
+              }
             />
           </Form.Group>
         );
@@ -50,7 +54,9 @@ function EditBlockModal({ show, onHide, block, onSave }) {
               <Form.Control
                 as="select"
                 value={config.method || 'GET'}
-                onChange={(e) => setConfig({ ...config, method: e.target.value })}
+                onChange={(e) =>
+                  setConfig({ ...config, method: e.target.value })
+                }
               >
                 <option>GET</option>
                 <option>POST</option>
@@ -78,7 +84,18 @@ function EditBlockModal({ show, onHide, block, onSave }) {
       <Modal.Header closeButton>
         <Modal.Title>Edit {block?.type} Block</Modal.Title>
       </Modal.Header>
-      <Modal.Body>{renderForm()}</Modal.Body>
+      <Modal.Body>
+        <Form.Group controlId="blockName">
+          <Form.Label>Block Name</Form.Label>
+          <Form.Control
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </Form.Group>
+        <hr />
+        {renderForm()}
+      </Modal.Body>
       <Modal.Footer>
         <Button variant="secondary" onClick={onHide}>
           Close

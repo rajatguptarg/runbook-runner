@@ -68,6 +68,7 @@ function RunbookEditor() {
     const newBlock = {
       id: uuidv4(),
       type: type,
+      name: `New ${type} block`,
       config: {},
       order: blocks.length + 1,
     };
@@ -88,10 +89,10 @@ function RunbookEditor() {
     setShowModal(false);
   };
 
-  const saveBlock = (id, newConfig) => {
+  const saveBlock = (id, newConfig, name) => {
     setBlocks(
       blocks.map((block) =>
-        block.id === id ? { ...block, config: newConfig } : block
+        block.id === id ? { ...block, config: newConfig, name: name } : block
       )
     );
   };

@@ -43,7 +43,7 @@ const Block = ({ block, onDelete, onEdit }) => {
         <Row className="align-items-center">
           <Col>
             <i className={`bi bi-${block.type === 'instruction' ? 'info-circle' : 'terminal'} me-2`}></i>
-            {block.type.charAt(0).toUpperCase() + block.type.slice(1)}
+            {block.name || `${block.type.charAt(0).toUpperCase() + block.type.slice(1)} Block`}
           </Col>
           <Col className="text-end">
             <Button variant="light" className="btn-sm mx-1" onClick={onEdit}>
