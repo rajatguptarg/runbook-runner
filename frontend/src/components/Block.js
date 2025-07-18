@@ -196,94 +196,107 @@ const Block = ({
     }
   };
 
-  const evaluateCondition = async (conditionConfig) => {
-    switch (conditionConfig.condition_type) {
-      case 'command_exit_code':
-        try {
-          const result = await executeBlock({
-            id: uuidv4(),
-            type: 'command',
-            name: 'Condition Check',
-            config: { command: conditionConfig.check_command },
-            order: 1
-          }, runbookId);
-          console.log('Full command result:', JSON.stringify(result, null, 2)); // Debug log
-          // Check for exit_code in different possible locations
-          const exitCode = result.data.exit_code ?? result.data.exitCode ?? result.data.exit_status ??
-                          result.exit_code ?? result.exitCode ?? result.exit_status ??
-                          (result.data.status === 'success' ? 0 : 1);
-          const expectedExitCode = parseInt(conditionConfig.expected_exit_code ?? 0);
-          console.log('Extracted exit code:', exitCode, 'Expected:', expectedExitCode, 'Types:', typeof exitCode, typeof expectedExitCode); // Debug log
-          const result_comparison = exitCode === expectedExitCode;
-          console.log('Comparison result:', result_comparison); // Debug log
-          return exitCode === expectedExitCode;
-        } catch (err) {
-          console.error('Command execution failed:', err);
-          console.error('Error response:', JSON.stringify(err.response?.data, null, 2));
-          return false;
-        }
-
-      case 'api_status_code':
-        try {
-          const result = await executeBlock({
-            id: uuidv4(),
-            type: 'api',
-            name: 'API Condition Check',
-            config: {
-              method: 'GET',
-              url: conditionConfig.check_url
-            },
-            order: 1
-          }, runbookId);
-          return result.data.status_code === (conditionConfig.expected_status_code || 200);
-        } catch (err) {
-          return false;
-        }
-
-      case 'file_exists':
-        try {
-          const result = await executeBlock({
-            id: uuidv4(),
-            type: 'command',
-            name: 'File Exists Check',
-            config: { command: `test -f "${conditionConfig.file_path}"` },
-            order: 1
-          }, runbookId);
-          return result.data.exit_code === 0;
-        } catch (err) {
-          return false;
-        }
-
-      case 'env_var_equals':
-        try {
-          const result = await executeBlock({
-            id: uuidv4(),
-            type: 'command',
-            name: 'Environment Variable Check',
-            config: { command: `echo $${conditionConfig.env_var_name}` },
-            order: 1
-          }, runbookId);
-          return result.data.output.trim() === conditionConfig.env_var_value;
-        } catch (err) {
-          return false;
-        }
-
-      default:
-        return false;
-    }
-  };
 
   const handleRunCondition = async () => {
     setIsLoading(true);
     setExecutionResult(null);
     try {
-      // Evaluate the condition using frontend logic
-      const conditionMet = await evaluateCondition(block.config);
+      let conditionMet = false;
+      let conditionOutput = '';
 
-      if (conditionMet) {
-        // If condition is true, execute nested blocks
-        const nestedResults = [];
-        for (const nestedBlock of block.config.nested_blocks || []) {
+      // Execute the condition check using backend
+      switch (block.config.condition_type) {
+        case 'command_exit_code':
+          try {
+            const conditionBlock = {
+              id: uuidv4(),
+              type: 'command',
+              name: 'Condition Check',
+              config: { command: block.config.check_command },
+              order: 1
+            };
+            const result = await executeBlock(conditionBlock, runbookId);
+            const exitCode = result.data.exit_code ?? (result.data.status === 'success' ? 0 : 1);
+            const expectedExitCode = parseInt(block.config.expected_exit_code ?? 0);
+            conditionMet = exitCode === expectedExitCode;
+            conditionOutput = `Command "${block.config.check_command}" returned exit code ${exitCode} (expected ${expectedExitCode})`;
+          } catch (err) {
+            conditionMet = false;
+            conditionOutput = `Command "${block.config.check_command}" failed to execute`;
+          }
+          break;
+
+        case 'api_status_code':
+          try {
+            const conditionBlock = {
+              id: uuidv4(),
+              type: 'api',
+              name: 'API Condition Check',
+              config: {
+                method: 'GET',
+                url: block.config.check_url
+              },
+              order: 1
+            };
+            const result = await executeBlock(conditionBlock, runbookId);
+            const statusCode = result.data.status_code ?? result.data.response?.status;
+            const expectedStatusCode = parseInt(block.config.expected_status_code ?? 200);
+            conditionMet = statusCode === expectedStatusCode;
+            conditionOutput = `API call to "${block.config.check_url}" returned status ${statusCode} (expected ${expectedStatusCode})`;
+          } catch (err) {
+            conditionMet = false;
+            conditionOutput = `API call to "${block.config.check_url}" failed`;
+          }
+          break;
+
+        case 'file_exists':
+          try {
+            const conditionBlock = {
+              id: uuidv4(),
+              type: 'command',
+              name: 'File Check',
+              config: { command: `test -f "${block.config.file_path}"` },
+              order: 1
+            };
+            const result = await executeBlock(conditionBlock, runbookId);
+            const exitCode = result.data.exit_code ?? (result.data.status === 'success' ? 0 : 1);
+            conditionMet = exitCode === 0;
+            conditionOutput = `File "${block.config.file_path}" ${conditionMet ? 'exists' : 'does not exist'}`;
+          } catch (err) {
+            conditionMet = false;
+            conditionOutput = `Failed to check if file "${block.config.file_path}" exists`;
+          }
+          break;
+
+        case 'env_var_equals':
+          try {
+            const conditionBlock = {
+              id: uuidv4(),
+              type: 'command',
+              name: 'Environment Variable Check',
+              config: { command: `echo $${block.config.env_var_name}` },
+              order: 1
+            };
+            const result = await executeBlock(conditionBlock, runbookId);
+            const actualValue = (result.data.output || '').trim();
+            const expectedValue = block.config.env_var_value || '';
+            conditionMet = actualValue === expectedValue;
+            conditionOutput = `Environment variable ${block.config.env_var_name}="${actualValue}" (expected "${expectedValue}")`;
+          } catch (err) {
+            conditionMet = false;
+            conditionOutput = `Failed to check environment variable ${block.config.env_var_name}`;
+          }
+          break;
+
+        default:
+          conditionMet = false;
+          conditionOutput = 'Unknown condition type';
+      }
+
+      // If condition is met, execute nested blocks
+      const nestedResults = [];
+      if (conditionMet && block.config.nested_blocks) {
+        for (const nestedBlock of block.config.nested_blocks) {
           try {
             const result = await executeBlock(nestedBlock, runbookId);
             nestedResults.push({
@@ -302,26 +315,22 @@ const Block = ({
             });
           }
         }
-
-        setExecutionResult({
-          status: 'success',
-          output: `Condition evaluated to TRUE. Executed ${nestedResults.length} nested blocks.`,
-          condition_met: true,
-          nested_results: nestedResults
-        });
-      } else {
-        setExecutionResult({
-          status: 'success',
-          output: 'Condition evaluated to FALSE. Nested blocks were skipped.',
-          condition_met: false,
-          nested_results: []
-        });
       }
+
+      setExecutionResult({
+        status: 'success',
+        output: conditionMet
+          ? `${conditionOutput} - Condition TRUE. Executed ${nestedResults.length} nested blocks.`
+          : `${conditionOutput} - Condition FALSE. Nested blocks skipped.`,
+        condition_met: conditionMet,
+        nested_results: nestedResults
+      });
+
     } catch (err) {
-      const errorDetail = err.response?.data?.detail;
+      console.error('Condition execution error:', err);
       setExecutionResult({
         status: 'error',
-        output: typeof errorDetail === 'string' ? errorDetail : JSON.stringify(errorDetail) || 'Failed to evaluate condition',
+        output: 'Failed to execute condition block',
         condition_met: false
       });
     } finally {
