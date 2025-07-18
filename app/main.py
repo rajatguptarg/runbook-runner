@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
 from app.security import require_roles
-from app.api import users, runbooks, versions, credentials
+from app.api import users, runbooks, versions, credentials, execution
 from app.db import create_init_beanie
 from app.models import (
     User,
@@ -49,3 +49,4 @@ app.include_router(users.router, prefix="/users", tags=["Users"])
 app.include_router(runbooks.router, prefix="/runbooks", tags=["Runbooks"])
 app.include_router(versions.router, prefix="/runbooks", tags=["Runbooks"])
 app.include_router(credentials.router, prefix="/credentials", tags=["Credentials"])
+app.include_router(execution.router, prefix="/runbooks", tags=["Execution"])
