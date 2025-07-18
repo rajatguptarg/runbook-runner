@@ -30,8 +30,8 @@ The project specifications can be found in the `spec/` directory:
 The system follows a 3-tier architecture:
 
 ```
-┌──────────────┐      HTTPS/API      ┌───────────────┐           ┌─────────────┐
-│  Browser UI  │ ──────────────────▶ │  FastAPI App  │ ◀──────────▶ │  Database   │
+┌──────────────┐      HTTPS/API       ┌───────────────┐               ┌─────────────┐
+│  Browser UI  │ ──────────────────▶  │  FastAPI App  │ ◀──────────▶  │  Database   │
 │   (React)    │                      │               │               │  (MongoDB)  │
 └──────────────┘                      └───────────────┘               └─────────────┘
                                                 │
