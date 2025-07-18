@@ -15,4 +15,4 @@ repos:
     additional_dependencies: [ruff==0.0.252]
     hooks:
     -   id: ruff
-        args: [--ignore, F401]
+        args: [--ignore, F401, --fix]

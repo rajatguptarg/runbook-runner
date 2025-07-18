@@ -1,5 +1,30 @@
+import os
+from functools import lru_cache
+
+from cryptography.fernet import Fernet
 from fastapi import Header, HTTPException, status, Depends
 from .models import User
+
+
+@lru_cache()
+def get_fernet() -> Fernet:
+    """Initializes and returns a Fernet instance for encryption."""
+    key = os.getenv("SECRET_KEY")
+    if not key:
+        raise ValueError("SECRET_KEY environment variable not set")
+    return Fernet(key.encode())
+
+
+def encrypt_secret(secret: str) -> str:
+    """Encrypt a secret using Fernet."""
+    fernet = get_fernet()
+    return fernet.encrypt(secret.encode()).decode()
+
+
+def decrypt_secret(encrypted_secret: str) -> str:
+    """Decrypt a secret using Fernet."""
+    fernet = get_fernet()
+    return fernet.decrypt(encrypted_secret.encode()).decode()
 
 
 async def get_current_user(

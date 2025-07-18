@@ -73,6 +73,7 @@ The system follows a 3-tier architecture:
     - `DB_HOST` – MongoDB host (defaults to `localhost` if omitted).
     - `DB_NAME` – name of the database.
     - `DB_CONNECTION` – optional full connection string containing the username, password, and host. If provided, this overrides the individual settings.
+    - `SECRET_KEY` – a secret key for encrypting credentials, generated with `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`.
 5.  Run the application:
     ```sh
     uvicorn app.main:app --reload

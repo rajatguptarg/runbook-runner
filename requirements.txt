@@ -9,6 +9,7 @@ pytest
 pytest-asyncio
 httpx
 pymongo
+cryptography
 annotated-types
 anyio
 certifi
