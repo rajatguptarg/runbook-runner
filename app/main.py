@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import FastAPI
 
 from app.security import require_roles
@@ -11,6 +12,7 @@ from app.models import (
     ExecutionStep,
     Credential,
 )
+from app.services.execution import execution_worker
 
 app = FastAPI(
     title="Runbook Studio",
@@ -26,7 +28,16 @@ document_models = [
     ExecutionStep,
     Credential,
 ]
-app.add_event_handler("startup", create_init_beanie(document_models))
+init_db = create_init_beanie(document_models)
+
+
+@app.on_event("startup")
+async def on_startup():
+    """
+    Initialize the database and start the background worker.
+    """
+    await init_db()
+    asyncio.create_task(execution_worker())
 
 
 @app.get("/", summary="Health check")
