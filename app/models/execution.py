@@ -10,6 +10,7 @@ from typing_extensions import Literal
 
 class ExecutionJob(Document):
     id: UUID = Field(default_factory=uuid4)
+    runbook_id: UUID
     version_id: UUID
     status: Literal["pending", "running", "completed", "failed"]
     start_time: datetime = Field(default_factory=datetime.utcnow)
@@ -19,6 +20,7 @@ class ExecutionJob(Document):
         name = "execution_jobs"
         indexes = [
             IndexModel([("version_id", ASCENDING)]),
+            IndexModel([("runbook_id", ASCENDING)]),
         ]
 
 

@@ -8,6 +8,8 @@ from typing_extensions import Literal
 from app.models.execution import ExecutionJob, ExecutionStep
 from app.models.runbook import Runbook, RunbookVersion
 from app.security import require_roles
+from datetime import datetime
+from typing import Optional
 
 router = APIRouter()
 
@@ -55,12 +57,43 @@ async def enqueue_execution(runbook_id: UUID, _=auth):
         )
 
     job = ExecutionJob(
+        runbook_id=runbook.id,
         version_id=latest_version.id,
         status="pending",
     )
     await job.insert()
 
     return ExecutionResponse(job_id=job.id)
+
+
+class ExecutionJobRead(BaseModel):
+    id: UUID
+    runbook_id: UUID
+    version_id: UUID
+    status: Literal["pending", "running", "completed", "failed"]
+    start_time: datetime
+    end_time: Optional[datetime] = None
+    runbook_title: str
+
+
+@router.get(
+    "/executions",
+    response_model=List[ExecutionJobRead],
+    summary="List all execution jobs",
+)
+async def list_all_executions(_=auth):
+    """
+    Retrieve a list of all execution jobs with their runbook titles.
+    """
+    jobs = await ExecutionJob.find_all().sort("-start_time").to_list()
+    results = []
+    for job in jobs:
+        runbook = await Runbook.get(job.runbook_id)
+        title = runbook.title if runbook else "Unknown Runbook"
+        job_dict = job.model_dump()
+        job_dict["runbook_title"] = title
+        results.append(ExecutionJobRead(**job_dict))
+    return results
 
 
 @router.get(
@@ -109,3 +142,17 @@ async def control_execution(job_id: UUID, request: ControlRequest, _=auth):
                 detail=f"Cannot stop a job in '{job.status}' state.",
             )
     return {"message": "Action not yet implemented."}
+
+
+@router.delete(
+    "/executions/clear",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Clear all execution history",
+)
+async def clear_all_executions(_=auth):
+    """
+    Delete all execution jobs and steps.
+    """
+    await ExecutionJob.delete_all()
+    await ExecutionStep.delete_all()
+    return None

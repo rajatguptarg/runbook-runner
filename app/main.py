@@ -1,6 +1,11 @@
 import asyncio
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 from app.logging_config import setup_logging
 from app.security import require_roles
@@ -24,6 +29,15 @@ app = FastAPI(
     title="Runbook Studio",
     description="A web-based application for actionable runbooks.",
     version="0.1.0",
+)
+
+# CORS Middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Expose Prometheus metrics

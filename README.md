@@ -120,6 +120,9 @@ This project is under active development. The backend API is functionally comple
     ```
     The application will be available at `http://localhost:3000`.
 
+**Note:** The frontend currently uses a mock API key for development. To use the application, you will need to sign up for a user and replace the mock key in `frontend/src/pages/RunbookList.js` with a valid key.
+
+
 ## Docker
 
 To run the entire application stack (backend, frontend, and database) using Docker, use the following command:
