@@ -133,6 +133,12 @@ class Credential(Document):
 
 ### Endpoints
 
+#### Users
+
+* `POST /users/signup` – Create a new user account.
+* `POST /users/login` – Log in to get an API key.
+* `POST /users/logout` – Log out.
+
 #### Runbooks
 
 * `GET /runbooks` – List runbooks

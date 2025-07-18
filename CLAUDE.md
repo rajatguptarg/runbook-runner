@@ -57,11 +57,35 @@ Since this is a new project without existing code, you'll need to:
 
 ## Key API Endpoints
 
-- `GET/POST/PUT/DELETE /runbooks` - Runbook CRUD operations
-- `GET /runbooks/{id}/versions` - Version management
-- `POST /runbooks/{id}/execute` - Enqueue execution job
-- `GET/POST /executions/{job_id}` - Execution status and control
-- `GET/POST/DELETE /credentials` - Credential management
+### Users
+
+-   **POST** `/users/signup` - Create a new user account.
+-   **POST** `/users/login` - Log in to get an API key.
+-   **POST** `/users/logout` - Log out.
+
+### Runbooks
+
+-   **GET** `/runbooks` - List all runbooks.
+-   **POST** `/runbooks` - Create a new runbook.
+-   **GET** `/runbooks/{id}` - Fetch a single runbook.
+-   **PUT** `/runbooks/{id}` - Update a runbook (creates a new version).
+-   **DELETE** `/runbooks/{id}` - Delete a runbook.
+
+### Versions
+
+-   **GET** `/runbooks/{id}/versions` - List all versions for a runbook.
+
+### Execution
+
+-   **POST** `/runbooks/{id}/execute` - Enqueue a new execution job.
+-   **GET** `/executions/{job_id}` - Get the status and output of an execution job.
+-   **POST** `/executions/{job_id}/control` - Pause, resume, or stop a job.
+
+### Credentials
+
+-   **GET** `/credentials` - List credentials.
+-   **POST** `/credentials` - Create a new credential.
+-   **DELETE** `/credentials/{id}` - Delete a credential.
 
 ## Testing Strategy
 

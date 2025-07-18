@@ -3,14 +3,30 @@ from fastapi import FastAPI
 from app.security import require_roles
 from app.api import users as users_router
 from app.db import create_init_beanie
-from app.models import User
+from app.models import (
+    User,
+    Runbook,
+    RunbookVersion,
+    ExecutionJob,
+    ExecutionStep,
+    Credential,
+)
 
 app = FastAPI(
     title="Runbook Studio",
     description="A web-based application for actionable runbooks.",
     version="0.1.0",
 )
-app.add_event_handler("startup", create_init_beanie([User]))
+
+document_models = [
+    User,
+    Runbook,
+    RunbookVersion,
+    ExecutionJob,
+    ExecutionStep,
+    Credential,
+]
+app.add_event_handler("startup", create_init_beanie(document_models))
 
 
 @app.get("/", summary="Health check")

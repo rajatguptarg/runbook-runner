@@ -86,22 +86,88 @@ To run the test suite, use `pytest`:
 pytest
 ```
 
-## API Endpoints
+## API Documentation
 
-Authentication is handled via an `X-API-KEY` header. Users obtain an API key by signing up and logging in. API keys and user roles are stored in the MongoDB database.
+Authentication is handled via an `X-API-KEY` header. Users can obtain an API key by signing up and then logging in.
 
-- `GET /runbooks`: List all runbooks.
-- `POST /runbooks`: Create a new runbook.
-- `GET /runbooks/{id}`: Fetch a single runbook.
-- `PUT /runbooks/{id}`: Update a runbook (creates a new version).
-- `DELETE /runbooks/{id}`: Delete a runbook.
-- `GET /runbooks/{id}/versions`: List all versions for a runbook.
-- `POST /runbooks/{id}/execute`: Enqueue a new execution job.
-- `GET /executions/{job_id}`: Get the status and output of an execution job.
-- `POST /executions/{job_id}/control`: Pause, resume, or stop a job.
-- `GET /credentials`: List credentials.
-- `POST /credentials`: Create a new credential.
-- `DELETE /credentials/{id}`: Delete a credential.
+### Users
+
+-   **POST** `/users/signup`
+    -   **Description**: Create a new user account.
+    -   **Body**: `SignupRequest`
+        -   `username` (str): The desired username.
+        -   `password` (str): The desired password.
+        -   `role` (str, optional): The user's role (e.g., "developer", "sre"). Defaults to "developer".
+    -   **Response**: `SignupResponse` with a new `api_key`.
+
+-   **POST** `/users/login`
+    -   **Description**: Log in to get an API key.
+    -   **Body**: `LoginRequest`
+        -   `username` (str): The username.
+        -   `password` (str): The password.
+    -   **Response**: `LoginResponse` with the user's `api_key`.
+
+-   **POST** `/users/logout`
+    -   **Description**: Log out (conceptually, as API keys are stateless).
+    -   **Authentication**: Required.
+    -   **Response**: `LogoutResponse`.
+
+### Runbooks
+
+-   **GET** `/runbooks`
+    -   **Description**: List all runbooks.
+    -   **Authentication**: Required.
+
+-   **POST** `/runbooks`
+    -   **Description**: Create a new runbook.
+    -   **Authentication**: Required.
+
+-   **GET** `/runbooks/{id}`
+    -   **Description**: Fetch a single runbook by its ID.
+    -   **Authentication**: Required.
+
+-   **PUT** `/runbooks/{id}`
+    -   **Description**: Update a runbook. This creates a new version.
+    -   **Authentication**: Required.
+
+-   **DELETE** `/runbooks/{id}`
+    -   **Description**: Delete a runbook.
+    -   **Authentication**: Required.
+
+### Versions
+
+-   **GET** `/runbooks/{id}/versions`
+    -   **Description**: List all versions for a specific runbook.
+    -   **Authentication**: Required.
+
+### Execution
+
+-   **POST** `/runbooks/{id}/execute`
+    -   **Description**: Enqueue a new execution job for a runbook.
+    -   **Authentication**: Required.
+
+-   **GET** `/executions/{job_id}`
+    -   **Description**: Get the status and output of an execution job.
+    -   **Authentication**: Required.
+
+-   **POST** `/executions/{job_id}/control`
+    -   **Description**: Pause, resume, or stop a job.
+    -   **Authentication**: Required.
+
+### Credentials
+
+-   **GET** `/credentials`
+    -   **Description**: List all credentials.
+    -   **Authentication**: Required (typically restricted to certain roles).
+
+-   **POST** `/credentials`
+    -   **Description**: Create a new credential.
+    -   **Authentication**: Required (typically restricted to certain roles).
+
+-   **DELETE** `/credentials/{id}`
+    -   **Description**: Delete a credential.
+    -   **Authentication**: Required (typically restricted to certain roles).
+
 
 ## Contributing
 
@@ -110,3 +176,6 @@ Please refer to `spec/tasks.md` for the planned implementation tasks. Contributi
 ## License
 
 This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
+
+---
+*Last Updated: 2025-07-18*
