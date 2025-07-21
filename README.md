@@ -158,4 +158,4 @@ A Postman collection is also available at `postman_collection.json`.
 This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
 
 ---
-*Last Updated: 2025-07-18*
+*Last Updated: 2025-07-21*
