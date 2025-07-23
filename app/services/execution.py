@@ -123,6 +123,25 @@ async def execute_command_block(block: Block) -> BlockExecutionResult:
         return BlockExecutionResult(status="error", output=str(e), exit_code=-1)
 
 
+async def execute_timer_block(block: Block) -> BlockExecutionResult:
+    """
+    Executes a timer block and returns the result without creating a database record.
+    """
+    duration = block.config.get("duration", 0)
+    try:
+        logger.info(f"Executing timer block {block.id}: pausing for {duration}s.")
+        await asyncio.sleep(duration)
+        logger.info(f"Timer block {block.id} finished.")
+        return BlockExecutionResult(
+            status="success",
+            output=f"Timer finished after {duration} seconds.",
+            exit_code=0,
+        )
+    except Exception as e:
+        logger.exception(f"Error executing timer block {block.id}")
+        return BlockExecutionResult(status="error", output=str(e), exit_code=-1)
+
+
 async def process_api_block(job: ExecutionJob, block: Block) -> bool:
     """
     Executes an API call block, captures the response, and records the step.

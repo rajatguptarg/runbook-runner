@@ -1,7 +1,8 @@
 # ruff: noqa: E402
 import sys
 from pathlib import Path
-from uuid import UUID
+from uuid import UUID, uuid4
+from unittest.mock import patch, AsyncMock
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
@@ -106,3 +107,30 @@ async def test_enqueue_runbook_with_no_versions(client: TestClient, sre_token: s
     resp = client.post(f"/runbooks/{runbook.id}/execute", headers=headers)
     assert resp.status_code == 400
     assert resp.json()["detail"] == "Cannot execute a runbook with no versions"
+
+
+@pytest.mark.asyncio
+async def test_execute_single_timer_block(
+    client: TestClient, sre_token: str, runbook_id: str
+):
+    headers = {"X-API-KEY": sre_token}
+    block_data = {
+        "type": "timer",
+        "config": {"duration": 1},
+        "order": 1,
+        "name": "Test Timer",
+        "id": str(uuid4()),
+    }
+
+    request_data = {"runbook_id": runbook_id, "block": block_data}
+
+    with patch(
+        "app.services.execution.asyncio.sleep", new_callable=AsyncMock
+    ) as mock_sleep:
+        resp = client.post("/blocks/execute", headers=headers, json=request_data)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "success"
+        assert data["exit_code"] == 0
+        assert "Timer finished after 1 seconds" in data["output"]
+        mock_sleep.assert_called_once_with(1)
