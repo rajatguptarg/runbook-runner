@@ -12,9 +12,11 @@ import CredentialsPage from './pages/CredentialsPage';
 import ExecutionHistoryPage from './pages/ExecutionHistoryPage';
 import AuditHistoryPage from './pages/AuditHistoryPage';
 import RunbookViewer from './pages/RunbookViewer';
+import EnvironmentsPage from './pages/EnvironmentsPage';
 
 function App() {
   const [apiKey, setApiKey] = useState(localStorage.getItem('apiKey'));
+
 
   useEffect(() => {
     const handleStorageChange = () => {
@@ -54,6 +56,11 @@ function App() {
               <Route path="/credentials" element={
                 <ProtectedRoute>
                   <CredentialsPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/environments" element={
+                <ProtectedRoute>
+                  <EnvironmentsPage />
                 </ProtectedRoute>
               } />
               <Route path="/history" element={

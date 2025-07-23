@@ -33,6 +33,9 @@ function Header() {
             <LinkContainer to="/credentials">
               <Nav.Link style={{ color: '#6c757d', fontWeight: '500' }}>Credentials</Nav.Link>
             </LinkContainer>
+            <LinkContainer to="/environments">
+              <Nav.Link style={{ color: '#6c757d', fontWeight: '500' }}>Environments</Nav.Link>
+            </LinkContainer>
             <LinkContainer to="/history">
               <Nav.Link style={{ color: '#6c757d', fontWeight: '500' }}>History</Nav.Link>
             </LinkContainer>

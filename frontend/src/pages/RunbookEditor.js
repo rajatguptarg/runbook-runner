@@ -2,7 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { Form, Button, Row, Col } from 'react-bootstrap';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { getRunbookDetails, updateRunbook, getCredentials } from '../services/api';
+import {
+  getRunbookDetails,
+  updateRunbook,
+  getCredentials,
+  getEnvironments,
+} from '../services/api';
 import Block from '../components/Block';
 import EditBlockModal from '../components/EditBlockModal';
 import { v4 as uuidv4 } from 'uuid';
@@ -15,6 +20,8 @@ function RunbookEditor() {
   const [description, setDescription] = useState('');
   const [blocks, setBlocks] = useState([]);
   const [credentials, setCredentials] = useState([]);
+  const [environments, setEnvironments] = useState([]);
+  const [environmentId, setEnvironmentId] = useState('');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -25,31 +32,40 @@ function RunbookEditor() {
   const [editingBlock, setEditingBlock] = useState(null);
 
   useEffect(() => {
-    const fetchRunbookAndCredentials = async () => {
+    const fetchAllData = async () => {
       try {
-        const [runbookRes, credentialsRes] = await Promise.all([
+        const [runbookRes, credentialsRes, environmentsRes] = await Promise.all([
           getRunbookDetails(runbookId),
           getCredentials(),
+          getEnvironments(),
         ]);
         setTitle(runbookRes.data.title);
         setDescription(runbookRes.data.description);
         setBlocks(runbookRes.data.blocks);
         setTags(runbookRes.data.tags || []);
+        setEnvironmentId(runbookRes.data.environment_id || '');
         setCredentials(credentialsRes.data);
+        setEnvironments(environmentsRes.data);
       } catch (err) {
-        setError('Failed to fetch runbook details.');
+        setError('Failed to fetch initial runbook data.');
         console.error(err);
       } finally {
         setLoading(false);
       }
     };
-    fetchRunbookAndCredentials();
+    fetchAllData();
   }, [runbookId]);
 
   const handleSave = async (e) => {
     e.preventDefault();
     try {
-      const runbookData = { title, description, blocks, tags };
+      const runbookData = {
+        title,
+        description,
+        blocks,
+        tags,
+        environment_id: environmentId || null,
+      };
       await updateRunbook(runbookId, runbookData);
       navigate('/');
     } catch (err) {
@@ -234,6 +250,22 @@ function RunbookEditor() {
             <p style={{ color: '#6c757d', marginBottom: '1.5rem', lineHeight: '1.6' }}>
               {description || 'This runbook performs standard system maintenance on all production servers. It ensures that disk space is managed, packages are up-to-date, and critical services are running correctly.'}
             </p>
+
+            <Form.Group controlId="environment" className="mb-4">
+              <Form.Label>Execution Environment</Form.Label>
+              <Form.Control
+                as="select"
+                value={environmentId}
+                onChange={(e) => setEnvironmentId(e.target.value)}
+              >
+                <option value="">Default (Local Execution)</option>
+                {environments.map((env) => (
+                  <option key={env.id} value={env.id}>
+                    {env.name}
+                  </option>
+                ))}
+              </Form.Control>
+            </Form.Group>
 
             {/* Steps Section */}
             <DragDropContext onDragEnd={onDragEnd}>

@@ -20,6 +20,7 @@ The project specifications can be found in the `spec/` directory:
     - **Conditional**: Branching logic based on the outcome of a check.
     - **Timer**: Pause execution for a specified interval.
 - **Execution Engine**: Run entire runbooks sequentially and view real-time outputs.
+- **Containerized Environments**: Define custom execution environments with Dockerfiles to ensure commands run in a consistent, isolated space.
 - **Versioning**: Runbooks are versioned, allowing for rollbacks to any prior version.
 - **Secure Credential Store**: Encrypted storage for API keys and other secrets.
 - **Role-Based Access Control (RBAC)**: Enforces permissions at the API level.
@@ -49,7 +50,7 @@ The system follows a 3-tier architecture:
 
 ## Tech Stack
 
-- **Backend**: Python 3.11, FastAPI, Beanie, Pydantic
+- **Backend**: Python 3.11, FastAPI, Beanie, Pydantic, Docker SDK
 - **Frontend**: React, React Router, Axios, React Markdown
 - **Database**: MongoDB
 - **Logging**: Loguru
@@ -153,9 +154,15 @@ A Postman collection is also available at `postman_collection.json`.
 2.  **Update Runbook**: `PUT /runbooks/{id}` to update a runbook. In the `blocks` array, add an API block and set `config.credential_id` to the ID of the credential you just created. You can also set `config.auth_header_name`.
 3.  **Execute Single Block**: `POST /blocks/execute` with the block's JSON definition and the `runbook_id` to test it. The execution will appear in the main execution history.
 
+#### 3. Create and Use a Custom Execution Environment
+
+1.  **Create Environment**: `POST /environments` (requires "sre" role) with a name, description, and a valid `Dockerfile`. The backend will build and tag the image.
+2.  **Assign to Runbook**: `PUT /runbooks/{id}` and include the `"environment_id"` in the request body, set to the ID of the environment you just created.
+3.  **Execute Command Block**: Any command blocks within this runbook will now execute inside a new container based on the specified environment image.
+
 ## License
 
 This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
 
 ---
-*Last Updated: 2025-07-21*
+*Last Updated: 2025-07-23*

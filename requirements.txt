@@ -49,3 +49,4 @@ websockets
 mongomock
 mongomock_motor
 prometheus-fastapi-instrumentator
+docker

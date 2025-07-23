@@ -19,7 +19,7 @@
         │                               │  Engine Worker │
         │                               └────────────────┘
         │                                       │
-        │                                 Local Shell
+        │                                 Local Shell / Docker Container
         │                                       │
         │                              ┌────────────────┐
         │                              │  Credential    │
@@ -66,11 +66,13 @@ class Runbook(Document):
     title: str
     description: str
     created_by: UUID
+    environment_id: Optional[UUID] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
     class Settings:
         name = "runbooks"
+
 
 class RunbookVersion(Document):
     id: UUID = Field(default_factory=uuid4)
@@ -120,6 +122,18 @@ class Credential(Document):
 
     class Settings:
         name = "credentials"
+
+class ExecutionEnvironment(Document):
+    id: UUID = Field(default_factory=uuid4)
+    name: str
+    description: str
+    dockerfile: str
+    image_tag: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_by: UUID
+
+    class Settings:
+        name = "execution_environments"
 ```
 
 ---
@@ -164,11 +178,19 @@ class Credential(Document):
 * `POST /credentials` – Create credential
 * `DELETE /credentials/{id}` – Delete credential
 
+#### Environments
+
+* `GET /environments` – List execution environments
+* `POST /environments` – Create a new environment and build its Docker image
+* `GET /environments/{id}` – Get environment details, including Dockerfile
+* `DELETE /environments/{id}` – Delete an environment and its associated image
+
 ---
 
 ## 5. Security Design
 
 * **Encryption:** Use Fernet (symmetric) to encrypt credential secrets before storage. Key stored in environment variable.
+* **Containerization:** Command blocks are executed in isolated Docker containers, preventing direct access to the host system.
 * **Command Sanitization:** Validate and disallow dangerous shell operators (e.g. `>` outside expected contexts).
 * **Approval Workflow:** Before running each command, API returns a confirmation-required status; frontend prompts user to confirm.
 

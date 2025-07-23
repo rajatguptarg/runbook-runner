@@ -59,32 +59,41 @@ This document captures the detailed requirements for a web-based Runbook applica
 **F3. Execution Engine**
 
 * **F3.1 Sequential Execution:** Run selected steps or entire runbook in order.
-* **F3.2 Output Panel:** For each Command/API block, display a fixed-width, scrollable console showing stdout, stderr, and exit code immediately below the block.
-* **F3.3 Controls:** Start, Pause, Resume, and Stop execution.
+* **F3.2 Containerized Execution:** Command blocks run inside isolated Docker containers based on a user-defined execution environment. If no environment is specified, commands run on the local host as a fallback.
+* **F3.3 Output Panel:** For each Command/API block, display a fixed-width, scrollable console showing stdout, stderr, and exit code immediately below the block.
+* **F3.4 Controls:** Start, Pause, Resume, and Stop execution.
 * **Acceptance Criteria:** Outputs refresh automatically (batch polling) and reflect actual command status.
 
-**F4. Versioning**
+**F4. Execution Environments**
 
-* **F4.1 Runbook Versions:** Maintain historical versions; allow rollback to any prior version.
+* **F4.1 Environment Definition:** Users can define a new execution environment by providing a name, description, and a complete Dockerfile.
+* **F4.2 Image Build:** The system builds a Docker image from the provided Dockerfile and tags it for future use.
+* **F4.3 Runbook Association:** Users can associate a runbook with a specific execution environment from a list of available environments.
+* **Acceptance Criteria:** A valid Dockerfile results in a runnable image; runbooks execute commands in the selected container.
+
+**F5. Versioning**
+
+* **F5.1 Runbook Versions:** Maintain historical versions; allow rollback to any prior version.
 * **Acceptance Criteria:** UI shows version history; user can revert.
 
-**F5. Credentials & Configuration**
+**F6. Credentials & Configuration**
 
-* **F5.1 Credential Store:** Securely save API credentials and SSH keys in the application.
-* **F5.2 Association:** Users can attach credentials to API Call blocks or command blocks as needed.
+* **F6.1 Credential Store:** Securely save API credentials and SSH keys in the application.
+* **F6.2 Association:** Users can attach credentials to API Call blocks or command blocks as needed.
 * **Acceptance Criteria:** Tokens/keys encrypted at rest; only privileged roles can manage credentials.
 
-**F6. Role-Based Access Control (RBAC)**
+**F7. Role-Based Access Control (RBAC)**
 
-* **F6.1 Roles:** At minimum, SRE and Developer roles have Create/Edit/Delete/Execute rights.
-* **F6.2 Enforcement:** Backend enforces permissions on all API endpoints.
+* **F7.1 Roles:** At minimum, SRE and Developer roles have Create/Edit/Delete/Execute rights. SREs can also manage credentials and execution environments.
+* **F7.2 Enforcement:** Backend enforces permissions on all API endpoints.
 * **Acceptance Criteria:** Unauthorized attempts return HTTP 403.
 
-**F7. Audit Logging & History**
+**F8. Audit Logging & History**
 
-* **F7.1 Execution Logs:** Store timestamp, user, runbook ID, step outputs, exit codes.
-* **F7.2 Audit Trail:** Log create/edit/delete actions on runbooks and credentials.
+* **F8.1 Execution Logs:** Store timestamp, user, runbook ID, step outputs, exit codes.
+* **F8.2 Audit Trail:** Log create/edit/delete actions on runbooks, credentials, and environments.
 * **Acceptance Criteria:** Logs queryable via API; UI shows execution history.
+
 
 ---
 
@@ -98,6 +107,7 @@ This document captures the detailed requirements for a web-based Runbook applica
 **N2. Security**
 
 * Encrypt credentials at rest; use HTTPS for all API traffic.
+* Execute commands in isolated Docker containers to prevent host system access.
 * Sanitize command inputs; confirm user approval before executing arbitrary commands.
 
 **N3. Reliability & Availability**

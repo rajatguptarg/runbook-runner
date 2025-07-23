@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Button, Row, Col, Spinner, Badge } from 'react-bootstrap';
-import { getRunbookDetails } from '../services/api';
+import { getRunbookDetails, getEnvironments } from '../services/api';
 import Block from '../components/Block';
 
 import ReactMarkdown from 'react-markdown';
@@ -26,14 +26,19 @@ const getBlockTypeColor = (type) => {
 function RunbookViewer() {
   const { id: runbookId } = useParams();
   const [runbook, setRunbook] = useState(null);
+  const [environments, setEnvironments] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchRunbook = async () => {
+    const fetchAllData = async () => {
       try {
-        const { data } = await getRunbookDetails(runbookId);
-        setRunbook(data);
+        const [runbookRes, environmentsRes] = await Promise.all([
+          getRunbookDetails(runbookId),
+          getEnvironments(),
+        ]);
+        setRunbook(runbookRes.data);
+        setEnvironments(environmentsRes.data);
       } catch (err) {
         setError('Failed to fetch runbook details.');
         console.error(err);
@@ -41,12 +46,16 @@ function RunbookViewer() {
         setLoading(false);
       }
     };
-    fetchRunbook();
+    fetchAllData();
   }, [runbookId]);
 
   if (loading) return <Spinner animation="border" />;
   if (error) return <div className="alert alert-danger">{error}</div>;
   if (!runbook) return <div>Runbook not found.</div>;
+
+  const selectedEnvironment = environments.find(
+    (env) => env.id === runbook.environment_id
+  );
 
   return (
     <div style={{ padding: '2rem 0' }}>
@@ -78,6 +87,17 @@ function RunbookViewer() {
             }}>
               <ReactMarkdown>{runbook.description}</ReactMarkdown>
             </div>
+
+            {selectedEnvironment && (
+              <div style={{ marginBottom: '1.5rem' }}>
+                <h6 style={{ fontWeight: '600', color: '#2c3e50' }}>
+                  Execution Environment
+                </h6>
+                <p style={{ color: '#6c757d', margin: 0 }}>
+                  {selectedEnvironment.name}
+                </p>
+              </div>
+            )}
 
             {runbook.tags && runbook.tags.length > 0 && (
               <div style={{ marginBottom: '1rem' }}>

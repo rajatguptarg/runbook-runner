@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from typing_extensions import Literal
 
 from app.models.block import Block
+from app.models.environment import ExecutionEnvironment
 from app.models.execution import ExecutionJob, ExecutionStep
 from app.models.runbook import Runbook, RunbookVersion
 from app.security import require_roles
@@ -103,9 +104,15 @@ async def execute_block(request: BlockExecuteRequest, _=auth):
     if not runbook:
         raise HTTPException(status_code=404, detail="Associated runbook not found")
 
+    environment = (
+        await ExecutionEnvironment.get(runbook.environment_id)
+        if runbook.environment_id
+        else None
+    )
+
     # Execute the block to get the result first
     if block.type == "command":
-        result = await execute_command_block(block)
+        result = await execute_command_block(block, environment)
     elif block.type == "api":
         result = await execute_api_block(block)
     elif block.type == "instruction":

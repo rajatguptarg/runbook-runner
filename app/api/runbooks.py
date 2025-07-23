@@ -1,8 +1,9 @@
 from datetime import datetime, UTC
-from typing import List
+from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+
 
 from app.models.block import Block
 from app.models.runbook import Runbook, RunbookVersion
@@ -21,6 +22,7 @@ class RunbookCreate(BaseModel):
     description: str
     blocks: List[Block] = []
     tags: List[str] = []
+    environment_id: Optional[UUID] = None
 
 
 class RunbookUpdate(BaseModel):
@@ -28,6 +30,7 @@ class RunbookUpdate(BaseModel):
     description: str
     blocks: List[Block]
     tags: List[str] = []
+    environment_id: Optional[UUID] = None
 
 
 class RunbookRead(BaseModel):
@@ -40,6 +43,7 @@ class RunbookRead(BaseModel):
     version: int
     blocks: List[Block]
     tags: List[str] = []
+    environment_id: Optional[UUID] = None
 
 
 # Dependency for authorization
@@ -65,6 +69,7 @@ async def create_runbook(
         description=data.description,
         created_by=current_user.id,
         tags=data.tags,
+        environment_id=data.environment_id,
     )
     await runbook.insert()
 
@@ -193,6 +198,7 @@ async def update_runbook(
     runbook.title = data.title
     runbook.description = data.description
     runbook.tags = data.tags
+    runbook.environment_id = data.environment_id
     runbook.updated_at = datetime.now(UTC)
     await runbook.save()
 

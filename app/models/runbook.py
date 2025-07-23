@@ -1,5 +1,5 @@
 from datetime import datetime, UTC
-from typing import List
+from typing import List, Optional
 from uuid import UUID, uuid4
 
 from beanie import Document
@@ -14,6 +14,7 @@ class Runbook(Document):
     title: str
     description: str
     created_by: UUID
+    environment_id: Optional[UUID] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     tags: List[str] = []

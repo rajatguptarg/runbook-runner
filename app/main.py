@@ -9,7 +9,15 @@ load_dotenv()
 
 from app.logging_config import setup_logging
 from app.security import require_roles
-from app.api import users, runbooks, versions, credentials, execution, audit
+from app.api import (
+    users,
+    runbooks,
+    versions,
+    credentials,
+    execution,
+    audit,
+    environments,
+)
 from app.db import create_init_beanie
 from app.models import (
     User,
@@ -19,6 +27,7 @@ from app.models import (
     ExecutionStep,
     Credential,
     AuditLog,
+    ExecutionEnvironment,
 )
 from app.services.execution import execution_worker
 
@@ -66,6 +75,7 @@ document_models = [
     ExecutionStep,
     Credential,
     AuditLog,
+    ExecutionEnvironment,
 ]
 init_db = create_init_beanie(document_models)
 
@@ -92,3 +102,4 @@ app.include_router(versions.router, prefix="/runbooks", tags=["Runbooks"])
 app.include_router(credentials.router, prefix="/credentials", tags=["Credentials"])
 app.include_router(execution.router, tags=["Execution"])
 app.include_router(audit.router, prefix="/audit", tags=["Audit"])
+app.include_router(environments.router, prefix="/environments", tags=["Environments"])

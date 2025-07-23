@@ -45,5 +45,12 @@ export const deleteCredential = (id) => instance.delete(`/credentials/${id}`);
 // --- Audit ---
 export const getAuditLogs = () => instance.get('/audit');
 
+// --- Environments ---
+export const getEnvironments = () => instance.get('/environments');
+export const getEnvironmentDetails = (id) => instance.get(`/environments/${id}`);
+export const createEnvironment = (data) => instance.post('/environments', data);
+export const updateEnvironment = (id, data) =>
+  instance.put(`/environments/${id}`, data);
+export const deleteEnvironment = (id) => instance.delete(`/environments/${id}`);
 
 export default instance;

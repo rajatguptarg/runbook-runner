@@ -1,11 +1,14 @@
 import asyncio
+import docker
 import httpx
 from loguru import logger
 from typing import Dict, Any
 from pydantic import BaseModel
 
+from app.models import Runbook
 from app.models.block import Block
 from app.models.credential import Credential
+from app.models.environment import ExecutionEnvironment
 from app.models.execution import ExecutionJob, ExecutionStep
 from app.models.runbook import RunbookVersion
 from app.security import decrypt_secret
@@ -87,9 +90,44 @@ async def execute_api_block(block: Block) -> BlockExecutionResult:
         return BlockExecutionResult(status="error", output=str(e), exit_code=-1)
 
 
-async def execute_command_block(block: Block) -> BlockExecutionResult:
+async def execute_command_in_container(
+    command: str, image_tag: str
+) -> BlockExecutionResult:
     """
-    Executes a command block and returns the result without creating a database record.
+    Executes a shell command inside a new Docker container and returns the result.
+    """
+    try:
+        client = docker.from_env()
+        container = client.containers.run(
+            image_tag, command, detach=True, network_mode="host"
+        )
+        result = container.wait()
+        stdout = container.logs(stdout=True, stderr=False).decode("utf-8")
+        stderr = container.logs(stdout=False, stderr=True).decode("utf-8")
+        container.remove()
+
+        exit_code = result["StatusCode"]
+        status = "success" if exit_code == 0 else "error"
+        output = f"{stdout}\n{stderr}".strip()
+
+        return BlockExecutionResult(status=status, output=output, exit_code=exit_code)
+
+    except docker.errors.ImageNotFound:
+        return BlockExecutionResult(
+            status="error",
+            output=f"Execution environment image not found: {image_tag}",
+            exit_code=-1,
+        )
+    except Exception as e:
+        logger.exception(f"Error executing command in container with image {image_tag}")
+        return BlockExecutionResult(status="error", output=str(e), exit_code=-1)
+
+
+async def execute_command_block(
+    block: Block, environment: ExecutionEnvironment | None
+) -> BlockExecutionResult:
+    """
+    Executes a command block, either in a container or locally.
     """
     command = block.config.get("command")
     if not command:
@@ -99,6 +137,13 @@ async def execute_command_block(block: Block) -> BlockExecutionResult:
             exit_code=-1,
         )
 
+    if environment and environment.image_tag:
+        logger.info(
+            f"Executing command for block {block.id} in container {environment.image_tag}"
+        )
+        return await execute_command_in_container(command, environment.image_tag)
+
+    logger.info(f"Executing command for block {block.id} locally")
     try:
         proc = await asyncio.create_subprocess_shell(
             command,
@@ -162,7 +207,9 @@ async def process_api_block(job: ExecutionJob, block: Block) -> bool:
     return result.status == "success"
 
 
-async def process_condition_block(job: ExecutionJob, block: Block) -> bool:
+async def process_condition_block(
+    job: ExecutionJob, block: Block, environment: ExecutionEnvironment | None
+) -> bool:
     """
     Executes a conditional block. For now, only 'command' type is supported.
     Returns True if the condition is met, False otherwise.
@@ -173,10 +220,12 @@ async def process_condition_block(job: ExecutionJob, block: Block) -> bool:
         return True  # Treat as success
 
     # Re-use command processing logic for the condition
-    return await process_command_block(job, block)
+    return await process_command_block(job, block, environment)
 
 
-async def process_command_block(job: ExecutionJob, block: Block) -> bool:
+async def process_command_block(
+    job: ExecutionJob, block: Block, environment: ExecutionEnvironment | None
+) -> bool:
     """
     Executes a command block, captures its output, and records the step.
     Returns True on success, False on failure.
@@ -186,7 +235,7 @@ async def process_command_block(job: ExecutionJob, block: Block) -> bool:
     )
     await step.insert()
 
-    result = await execute_command_block(block)
+    result = await execute_command_block(block, environment)
 
     step.status = result.status
     step.output = result.output
@@ -233,6 +282,13 @@ async def run_job(job: ExecutionJob):
         await job.save()
         return
 
+    runbook = await Runbook.get(job.runbook_id)
+    environment = (
+        await ExecutionEnvironment.get(runbook.environment_id)
+        if runbook and runbook.environment_id
+        else None
+    )
+
     # Sort blocks by their order
     sorted_blocks = sorted(version.blocks, key=lambda b: b.order)
 
@@ -245,14 +301,14 @@ async def run_job(job: ExecutionJob):
 
         success = False
         if block.type == "command":
-            success = await process_command_block(job, block)
+            success = await process_command_block(job, block, environment)
         elif block.type == "instruction":
             logger.info(f"Executing instruction block {block.id}: No action needed.")
             success = True
         elif block.type == "api":
             success = await process_api_block(job, block)
         elif block.type == "condition":
-            success = await process_condition_block(job, block)
+            success = await process_condition_block(job, block, environment)
         elif block.type == "timer":
             success = await process_timer_block(job, block)
         else:
