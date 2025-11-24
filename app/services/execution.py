@@ -224,20 +224,20 @@ async def execute_ssh_block(block: Block) -> BlockExecutionResult:
             host, username=username, client_keys=client_keys, known_hosts=None
         ) as conn:
             result = await conn.run(command)
-            
+
             output = ""
             if result.stdout:
                 output += result.stdout
             if result.stderr:
                 output += result.stderr
-            
+
             status = "success" if result.exit_status == 0 else "error"
             return BlockExecutionResult(
                 status=status,
                 output=output.strip(),
                 exit_code=result.exit_status,
             )
-            
+
     except Exception as e:
         logger.exception(f"Error executing SSH block {block.id}")
         return BlockExecutionResult(status="error", output=str(e), exit_code=-1)

@@ -31,12 +31,12 @@ async def test_execute_ssh_block_success():
     mock_result.exit_status = 0
     mock_result.stdout = "hello\n"
     mock_result.stderr = ""
-    
+
     # Setup async context manager for connect
     mock_conn_ctx = AsyncMock()
     mock_conn_ctx.__aenter__.return_value = mock_conn
     mock_conn_ctx.__aexit__.return_value = None
-    
+
     # Setup run method
     mock_conn.run = AsyncMock(return_value=mock_result)
 
@@ -44,15 +44,15 @@ async def test_execute_ssh_block_success():
          patch("app.services.execution.decrypt_secret", return_value="private_key"), \
          patch("asyncssh.import_private_key"), \
          patch("asyncssh.connect", return_value=mock_conn_ctx) as mock_connect:
-        
+
         mock_get_cred.return_value = mock_cred
-        
+
         result = await execute_ssh_block(block)
-        
+
         assert result.status == "success"
         assert result.output == "hello"
         assert result.exit_code == 0
-        
+
         mock_connect.assert_called_once()
         mock_conn.run.assert_called_once_with("echo hello")
 
@@ -64,9 +64,9 @@ async def test_execute_ssh_block_missing_config():
         config={},
         order=1
     )
-    
+
     result = await execute_ssh_block(block)
-    
+
     assert result.status == "error"
     assert "missing host" in result.output
 
@@ -82,9 +82,9 @@ async def test_execute_ssh_block_connection_error():
         },
         order=1
     )
-    
+
     with patch("asyncssh.connect", side_effect=Exception("Connection failed")):
         result = await execute_ssh_block(block)
-        
+
         assert result.status == "error"
         assert "Connection failed" in result.output
