@@ -45,6 +45,18 @@ const ApiBlock = ({ block }) => (
   </Card.Body>
 );
 
+const SSHBlock = ({ block }) => (
+  <Card.Body>
+    <Card.Text>
+      <strong>Host:</strong> {block.config.host || 'Not configured'}<br />
+      <strong>User:</strong> {block.config.username || 'Not configured'}
+    </Card.Text>
+    <Card.Text as="pre" className="bg-dark text-white p-2 rounded">
+      <code>$ {block.config.command || '# No command yet'}</code>
+    </Card.Text>
+  </Card.Body>
+);
+
 const ConditionBlock = ({ block, runbookId, onAddNestedBlock, onEditNestedBlock, onDeleteNestedBlock, isEditable, conditionResult }) => {
   const getConditionDescription = () => {
     switch (block.config.condition_type) {
@@ -360,6 +372,8 @@ const Block = ({
         );
       case 'timer':
         return <TimerBlock block={block} />;
+      case 'ssh':
+        return <SSHBlock block={block} />;
       default:
         return <Card.Body>Unsupported block type: {block.type}</Card.Body>;
     }
@@ -372,6 +386,7 @@ const Block = ({
       case 'api': return 'cloud';
       case 'condition': return 'question-circle';
       case 'timer': return 'clock';
+      case 'ssh': return 'terminal-fill';
       default: return 'square';
     }
   };

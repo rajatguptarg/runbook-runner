@@ -408,6 +408,41 @@ function RunbookEditor() {
               <h6 style={{ fontWeight: '600', margin: 0 }}>Command</h6>
             </div>
 
+            {/* SSH Block */}
+            <div
+              onClick={() => addBlock('ssh')}
+              style={{
+                border: '2px dashed #e9ecef',
+                borderRadius: '8px',
+                padding: '1rem',
+                textAlign: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.borderColor = '#007bff';
+                e.target.style.backgroundColor = '#f8f9ff';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.borderColor = '#e9ecef';
+                e.target.style.backgroundColor = 'transparent';
+              }}
+            >
+              <div style={{
+                backgroundColor: '#e0f7fa',
+                borderRadius: '50%',
+                width: '40px',
+                height: '40px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 0.5rem'
+              }}>
+                <i className="bi bi-terminal-fill" style={{ color: '#006064', fontSize: '1.2rem' }}></i>
+              </div>
+              <h6 style={{ fontWeight: '600', margin: 0 }}>SSH</h6>
+            </div>
+
             {/* Condition Block */}
             <div
               onClick={() => addBlock('condition')}

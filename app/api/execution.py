@@ -19,6 +19,7 @@ from app.services.execution import (
     execute_command_block,
     execute_api_block,
     execute_timer_block,
+    execute_ssh_block,
     BlockExecutionResult,
 )
 
@@ -121,6 +122,8 @@ async def execute_block(request: BlockExecuteRequest, _=auth):
         )
     elif block.type == "timer":
         result = await execute_timer_block(block)
+    elif block.type == "ssh":
+        result = await execute_ssh_block(block)
     else:
         raise HTTPException(
             status_code=400, detail=f"Block type '{block.type}' cannot be executed."

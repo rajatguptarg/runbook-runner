@@ -8,6 +8,6 @@ from typing_extensions import Literal
 class Block(BaseModel):
     id: UUID = Field(default_factory=uuid4)
     name: Optional[str] = None
-    type: Literal["instruction", "command", "api", "condition", "timer"]
+    type: Literal["instruction", "command", "api", "condition", "timer", "ssh"]
     config: Dict[str, Any]
     order: int

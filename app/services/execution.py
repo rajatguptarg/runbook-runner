@@ -1,6 +1,7 @@
 import asyncio
 import docker
 import httpx
+import asyncssh
 from loguru import logger
 from typing import Dict, Any
 from pydantic import BaseModel
@@ -187,6 +188,81 @@ async def execute_timer_block(block: Block) -> BlockExecutionResult:
         return BlockExecutionResult(status="error", output=str(e), exit_code=-1)
 
 
+async def execute_ssh_block(block: Block) -> BlockExecutionResult:
+    """
+    Executes an SSH block and returns the result without creating a database record.
+    """
+    config = block.config
+    host = config.get("host")
+    username = config.get("username")
+    command = config.get("command")
+    credential_id = config.get("credential_id")
+
+    if not host or not username or not command:
+        return BlockExecutionResult(
+            status="error",
+            output="SSH block missing host, username, or command.",
+            exit_code=-1,
+        )
+
+    client_keys = None
+    if credential_id:
+        cred = await Credential.get(credential_id)
+        if cred and cred.type == "ssh":
+            try:
+                private_key = decrypt_secret(cred.encrypted_secret)
+                client_keys = [asyncssh.import_private_key(private_key)]
+            except Exception as e:
+                return BlockExecutionResult(
+                    status="error",
+                    output=f"Failed to load SSH key: {str(e)}",
+                    exit_code=-1,
+                )
+
+    try:
+        async with asyncssh.connect(
+            host, username=username, client_keys=client_keys, known_hosts=None
+        ) as conn:
+            result = await conn.run(command)
+            
+            output = ""
+            if result.stdout:
+                output += result.stdout
+            if result.stderr:
+                output += result.stderr
+            
+            status = "success" if result.exit_status == 0 else "error"
+            return BlockExecutionResult(
+                status=status,
+                output=output.strip(),
+                exit_code=result.exit_status,
+            )
+            
+    except Exception as e:
+        logger.exception(f"Error executing SSH block {block.id}")
+        return BlockExecutionResult(status="error", output=str(e), exit_code=-1)
+
+
+async def process_ssh_block(job: ExecutionJob, block: Block) -> bool:
+    """
+    Executes an SSH block, captures the response, and records the step.
+    Returns True on success, False otherwise.
+    """
+    step = ExecutionStep(
+        job_id=job.id, block_id=block.id, status="running", output="", exit_code=-1
+    )
+    await step.insert()
+
+    result = await execute_ssh_block(block)
+
+    step.status = result.status
+    step.output = result.output
+    step.exit_code = result.exit_code
+    await step.save()
+
+    return result.status == "success"
+
+
 async def process_api_block(job: ExecutionJob, block: Block) -> bool:
     """
     Executes an API call block, captures the response, and records the step.
@@ -311,6 +387,8 @@ async def run_job(job: ExecutionJob):
             success = await process_condition_block(job, block, environment)
         elif block.type == "timer":
             success = await process_timer_block(job, block)
+        elif block.type == "ssh":
+            success = await process_ssh_block(job, block)
         else:
             logger.warning(f"Block type '{block.type}' not yet supported.")
             success = True  # Treat unsupported types as success for now

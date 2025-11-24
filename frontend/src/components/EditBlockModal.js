@@ -246,6 +246,56 @@ function EditBlockModal({ show, onHide, block, onSave, credentials }) {
             />
           </Form.Group>
         );
+      case 'ssh':
+        return (
+          <>
+            <Form.Group controlId="host">
+              <Form.Label>Host</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="example.com"
+                value={config.host || ''}
+                onChange={(e) => setConfig({ ...config, host: e.target.value })}
+              />
+            </Form.Group>
+            <Form.Group controlId="username" className="mt-3">
+              <Form.Label>Username</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="user"
+                value={config.username || ''}
+                onChange={(e) => setConfig({ ...config, username: e.target.value })}
+              />
+            </Form.Group>
+            <Form.Group controlId="credential" className="mt-3">
+              <Form.Label>Credential (SSH Key)</Form.Label>
+              <Form.Control
+                as="select"
+                value={config.credential_id || ''}
+                onChange={(e) =>
+                  setConfig({ ...config, credential_id: e.target.value })
+                }
+              >
+                <option value="">None</option>
+                {credentials?.filter(c => c.type === 'ssh').map((cred) => (
+                  <option key={cred.id} value={cred.id}>
+                    {cred.name}
+                  </option>
+                ))}
+              </Form.Control>
+            </Form.Group>
+            <Form.Group controlId="command" className="mt-3">
+              <Form.Label>Command</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                placeholder="ls -la"
+                value={config.command || ''}
+                onChange={(e) => setConfig({ ...config, command: e.target.value })}
+              />
+            </Form.Group>
+          </>
+        );
       default:
         return <p>No editable fields for this block type.</p>;
     }
