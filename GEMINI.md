@@ -114,3 +114,8 @@ Since this is a new project without existing code, you'll need to:
 - Structured JSON logging with Loguru
 - Prometheus metrics for API latency and execution durations
 - Execution history and audit trails stored in database
+
+## Testing Guidelines
+
+- Use Python Path `/Users/rajatgupta/.virtualenvs/genai/bin/python` for local testing and execution.
+- Run the command `export PYTHONPATH=.; pytest` for running the python tests.

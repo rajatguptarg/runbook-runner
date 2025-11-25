@@ -237,7 +237,11 @@ async def test_run_condition_block_true():
         blocks=[
             Block(
                 type="condition",
-                config={"type": "command", "command": "exit 0"},
+                config={
+                    "condition_type": "command_exit_code",
+                    "check_command": "exit 0",
+                    "expected_exit_code": 0
+                },
                 order=1,
             ),
             Block(type="command", config={"command": "echo 'was true'"}, order=2),
@@ -274,10 +278,14 @@ async def test_run_condition_block_false():
         blocks=[
             Block(
                 type="condition",
-                config={"type": "command", "command": "exit 1"},
+                config={
+                    "condition_type": "command_exit_code",
+                    "check_command": "exit 1",
+                    "expected_exit_code": 0
+                },
                 order=1,
             ),
-            Block(type="command", config={"command": "echo 'never runs'"}, order=2),
+            Block(type="command", config={"command": "echo 'always runs'"}, order=2),
         ],
     )
     await version.insert()
@@ -286,18 +294,36 @@ async def test_run_condition_block_false():
 
     # 2. Mock subprocess
     with patch("asyncio.create_subprocess_shell") as mock_shell:
-        mock_shell.return_value.communicate.return_value = (b"", b"")
-        mock_shell.return_value.returncode = 1
+        # First call (condition) fails (exit 1)
+        # Second call (next block) succeeds (exit 0)
+        
+        proc_fail = AsyncMock()
+        proc_fail.communicate.return_value = (b"", b"")
+        proc_fail.returncode = 1
+        
+        proc_success = AsyncMock()
+        proc_success.communicate.return_value = (b"always runs", b"")
+        proc_success.returncode = 0
+        
+        mock_shell.side_effect = [proc_fail, proc_success]
 
         # 3. Run job
         await run_job(job)
 
         # 4. Assertions
         updated_job = await ExecutionJob.get(job.id)
-        assert updated_job.status == "failed"
+        assert updated_job.status == "completed"
+        
         steps = await ExecutionStep.find(ExecutionStep.job_id == job.id).to_list()
-        assert len(steps) == 1  # Fails on the condition
-        assert mock_shell.call_count == 1
+        # Should have 2 steps: 
+        # 1. Condition block (evaluated to false, but success status)
+        # 2. Sibling block (executed because condition block doesn't stop flow)
+        assert len(steps) == 2
+        assert steps[0].status == "success" # Condition evaluation itself succeeded (it just evaluated to false)
+        assert "FALSE" in steps[0].output
+        
+        assert steps[1].status == "success"
+        assert mock_shell.call_count == 2
 
 
 @pytest.mark.asyncio

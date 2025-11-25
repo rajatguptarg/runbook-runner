@@ -283,22 +283,6 @@ async def process_api_block(job: ExecutionJob, block: Block) -> bool:
     return result.status == "success"
 
 
-async def process_condition_block(
-    job: ExecutionJob, block: Block, environment: ExecutionEnvironment | None
-) -> bool:
-    """
-    Executes a conditional block. For now, only 'command' type is supported.
-    Returns True if the condition is met, False otherwise.
-    """
-    condition_type = block.config.get("type")
-    if condition_type != "command":
-        logger.warning(f"Unsupported condition type '{condition_type}'")
-        return True  # Treat as success
-
-    # Re-use command processing logic for the condition
-    return await process_command_block(job, block, environment)
-
-
 async def process_command_block(
     job: ExecutionJob, block: Block, environment: ExecutionEnvironment | None
 ) -> bool:
@@ -343,6 +327,136 @@ async def process_timer_block(job: ExecutionJob, block: Block) -> bool:
     return True
 
 
+async def evaluate_condition(block: Block, environment: ExecutionEnvironment | None) -> tuple[bool, str]:
+    """
+    Evaluates the condition. Returns (is_met, output_description).
+    """
+    condition_type = block.config.get("condition_type", "command_exit_code")
+
+    if condition_type == "command_exit_code":
+        check_command = block.config.get("check_command")
+        expected_exit_code = int(block.config.get("expected_exit_code", 0))
+        
+        temp_block = Block(
+            type="command",
+            config={"command": check_command},
+            order=0
+        )
+        result = await execute_command_block(temp_block, environment)
+        return result.exit_code == expected_exit_code, f"Command exit code: {result.exit_code} (expected {expected_exit_code})"
+
+    elif condition_type == "api_status_code":
+        check_url = block.config.get("check_url")
+        expected_status_code = int(block.config.get("expected_status_code", 200))
+        
+        temp_block = Block(
+            type="api",
+            config={"url": check_url, "method": "GET"},
+            order=0
+        )
+        result = await execute_api_block(temp_block)
+        return result.exit_code == expected_status_code, f"API status code: {result.exit_code} (expected {expected_status_code})"
+
+    elif condition_type == "file_exists":
+        file_path = block.config.get("file_path")
+        temp_block = Block(
+            type="command",
+            config={"command": f"test -f \'{file_path}\'"},
+            order=0
+        )
+        result = await execute_command_block(temp_block, environment)
+        return result.exit_code == 0, f"File exists check: {'Yes' if result.exit_code == 0 else 'No'}"
+
+    elif condition_type == "env_var_equals":
+        env_var_name = block.config.get("env_var_name")
+        expected_value = block.config.get("env_var_value")
+        temp_block = Block(
+            type="command",
+            config={"command": f"echo ${env_var_name}"},
+            order=0
+        )
+        result = await execute_command_block(temp_block, environment)
+        actual_value = result.output.strip()
+        return actual_value == expected_value, f"Env var value: '{actual_value}' (expected '{expected_value}')"
+        
+    return False, "Unknown condition type"
+
+
+async def process_condition_block(
+    job: ExecutionJob, block: Block, environment: ExecutionEnvironment | None
+) -> bool:
+    """
+    Executes a conditional block and its nested blocks if condition is met.
+    """
+    step = ExecutionStep(
+        job_id=job.id, block_id=block.id, status="running", output="Evaluating condition...", exit_code=-1
+    )
+    await step.insert()
+
+    is_met, description = await evaluate_condition(block, environment)
+    
+    step.output = f"Condition evaluated: {description}. Result: {'TRUE' if is_met else 'FALSE'}"
+    step.status = "success" 
+    step.exit_code = 0 
+    await step.save()
+
+    if is_met:
+        nested_blocks_data = block.config.get("nested_blocks", [])
+        if nested_blocks_data:
+            logger.info(f"Condition met for block {block.id}. Executing {len(nested_blocks_data)} nested blocks.")
+            for nested_block_data in nested_blocks_data:
+                # Handle both dict and object (if already converted)
+                if isinstance(nested_block_data, dict):
+                    nested_block = Block(**nested_block_data)
+                else:
+                    nested_block = nested_block_data
+                
+                success = await process_block(job, nested_block, environment)
+                if not success:
+                    return False
+    else:
+        logger.info(f"Condition not met for block {block.id}. Executing else blocks if any.")
+        else_blocks_data = block.config.get("else_blocks", [])
+        if else_blocks_data:
+            logger.info(f"Condition not met for block {block.id}. Executing {len(else_blocks_data)} else blocks.")
+            for else_block_data in else_blocks_data:
+                # Handle both dict and object (if already converted)
+                if isinstance(else_block_data, dict):
+                    else_block = Block(**else_block_data)
+                else:
+                    else_block = else_block_data
+                
+                success = await process_block(job, else_block, environment)
+                if not success:
+                    return False
+        else:
+            logger.info(f"No else blocks configured for block {block.id}.")
+
+    return True
+
+
+async def process_block(job: ExecutionJob, block: Block, environment: ExecutionEnvironment | None) -> bool:
+    """
+    Dispatch block execution based on type.
+    """
+    if block.type == "command":
+        return await process_command_block(job, block, environment)
+    elif block.type == "instruction":
+        logger.info(f"Executing instruction block {block.id}: No action needed.")
+        return True
+    elif block.type == "api":
+        return await process_api_block(job, block)
+    elif block.type == "condition":
+        return await process_condition_block(job, block, environment)
+    elif block.type == "timer":
+        return await process_timer_block(job, block)
+    elif block.type == "ssh":
+        return await process_ssh_block(job, block)
+    else:
+        logger.warning(f"Block type '{block.type}' not yet supported.")
+        return True
+
+
 async def run_job(job: ExecutionJob):
     """
     Runs a single execution job by processing its blocks sequentially.
@@ -375,23 +489,7 @@ async def run_job(job: ExecutionJob):
             logger.info(f"Job {job.id} was stopped externally. Halting execution.")
             return
 
-        success = False
-        if block.type == "command":
-            success = await process_command_block(job, block, environment)
-        elif block.type == "instruction":
-            logger.info(f"Executing instruction block {block.id}: No action needed.")
-            success = True
-        elif block.type == "api":
-            success = await process_api_block(job, block)
-        elif block.type == "condition":
-            success = await process_condition_block(job, block, environment)
-        elif block.type == "timer":
-            success = await process_timer_block(job, block)
-        elif block.type == "ssh":
-            success = await process_ssh_block(job, block)
-        else:
-            logger.warning(f"Block type '{block.type}' not yet supported.")
-            success = True  # Treat unsupported types as success for now
+        success = await process_block(job, block, environment)
 
         if not success:
             logger.error(f"Job {job.id} failed on block {block.id}")

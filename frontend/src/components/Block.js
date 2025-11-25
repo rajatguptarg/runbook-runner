@@ -95,24 +95,30 @@ const ConditionBlock = ({ block, runbookId, onAddNestedBlock, onEditNestedBlock,
           )}
         </div>
 
-        {/* Nested Blocks */}
-        <div style={{ marginLeft: '1rem', borderLeft: '3px solid #dee2e6', paddingLeft: '1rem' }}>
+        {/* Nested Blocks (If True) */}
+        <div style={{ marginLeft: '1rem', borderLeft: '3px solid #c3e6cb', paddingLeft: '1rem', marginBottom: '1rem' }}>
           <div className="d-flex justify-content-between align-items-center mb-2">
-            <h6 style={{ margin: 0, color: '#6c757d' }}>Execute if condition is true:</h6>
+            <h6 style={{ margin: 0, color: '#28a745' }}>If True:</h6>
             {isEditable && (
               <Dropdown>
-                <Dropdown.Toggle variant="outline-secondary" size="sm">
+                <Dropdown.Toggle variant="outline-success" size="sm">
                   <i className="bi bi-plus"></i> Add Block
                 </Dropdown.Toggle>
                 <Dropdown.Menu>
-                  <Dropdown.Item onClick={() => onAddNestedBlock(block.id, 'instruction')}>
+                  <Dropdown.Item onClick={() => onAddNestedBlock(block.id, 'instruction', 'nested_blocks')}>
                     <i className="bi bi-info-circle me-2"></i>Instruction
                   </Dropdown.Item>
-                  <Dropdown.Item onClick={() => onAddNestedBlock(block.id, 'command')}>
+                  <Dropdown.Item onClick={() => onAddNestedBlock(block.id, 'command', 'nested_blocks')}>
                     <i className="bi bi-terminal me-2"></i>Command
                   </Dropdown.Item>
-                  <Dropdown.Item onClick={() => onAddNestedBlock(block.id, 'api')}>
+                  <Dropdown.Item onClick={() => onAddNestedBlock(block.id, 'api', 'nested_blocks')}>
                     <i className="bi bi-cloud me-2"></i>API Call
+                  </Dropdown.Item>
+                  <Dropdown.Item onClick={() => onAddNestedBlock(block.id, 'ssh', 'nested_blocks')}>
+                    <i className="bi bi-terminal-fill me-2"></i>SSH
+                  </Dropdown.Item>
+                  <Dropdown.Item onClick={() => onAddNestedBlock(block.id, 'timer', 'nested_blocks')}>
+                    <i className="bi bi-clock me-2"></i>Timer
                   </Dropdown.Item>
                 </Dropdown.Menu>
               </Dropdown>
@@ -126,7 +132,7 @@ const ConditionBlock = ({ block, runbookId, onAddNestedBlock, onEditNestedBlock,
                   block={nestedBlock}
                   runbookId={runbookId}
                   onDelete={() => onDeleteNestedBlock(block.id, nestedBlock.id)}
-                  onEdit={() => onEditNestedBlock(block.id, nestedBlock)}
+                  onEdit={() => onEditNestedBlock(block.id, nestedBlock, 'nested_blocks')}
                   isEditable={isEditable}
                   isNested={true}
                   isDisabled={!conditionResult || !conditionResult.condition_met}
@@ -136,16 +142,73 @@ const ConditionBlock = ({ block, runbookId, onAddNestedBlock, onEditNestedBlock,
           ) : (
             <div style={{
               backgroundColor: '#f8f9fa',
-              border: '2px dashed #dee2e6',
+              border: '1px dashed #c3e6cb',
               borderRadius: '4px',
-              padding: '1.5rem',
+              padding: '1rem',
               textAlign: 'center',
-              color: '#6c757d'
+              color: '#6c757d',
+              fontSize: '0.875rem'
             }}>
-              <i className="bi bi-inbox" style={{ fontSize: '1.5rem', marginBottom: '0.5rem', display: 'block' }}></i>
-              <p style={{ margin: 0, fontSize: '0.875rem' }}>
-                No nested blocks. Add blocks to execute when the condition is true.
-              </p>
+              No blocks to execute when true.
+            </div>
+          )}
+        </div>
+
+        {/* Else Blocks (If False) */}
+        <div style={{ marginLeft: '1rem', borderLeft: '3px solid #f5c6cb', paddingLeft: '1rem' }}>
+          <div className="d-flex justify-content-between align-items-center mb-2">
+            <h6 style={{ margin: 0, color: '#dc3545' }}>Else (If False):</h6>
+            {isEditable && (
+              <Dropdown>
+                <Dropdown.Toggle variant="outline-danger" size="sm">
+                  <i className="bi bi-plus"></i> Add Block
+                </Dropdown.Toggle>
+                <Dropdown.Menu>
+                  <Dropdown.Item onClick={() => onAddNestedBlock(block.id, 'instruction', 'else_blocks')}>
+                    <i className="bi bi-info-circle me-2"></i>Instruction
+                  </Dropdown.Item>
+                  <Dropdown.Item onClick={() => onAddNestedBlock(block.id, 'command', 'else_blocks')}>
+                    <i className="bi bi-terminal me-2"></i>Command
+                  </Dropdown.Item>
+                  <Dropdown.Item onClick={() => onAddNestedBlock(block.id, 'api', 'else_blocks')}>
+                    <i className="bi bi-cloud me-2"></i>API Call
+                  </Dropdown.Item>
+                  <Dropdown.Item onClick={() => onAddNestedBlock(block.id, 'ssh', 'else_blocks')}>
+                    <i className="bi bi-terminal-fill me-2"></i>SSH
+                  </Dropdown.Item>
+                  <Dropdown.Item onClick={() => onAddNestedBlock(block.id, 'timer', 'else_blocks')}>
+                    <i className="bi bi-clock me-2"></i>Timer
+                  </Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown>
+            )}
+          </div>
+
+          {block.config.else_blocks && block.config.else_blocks.length > 0 ? (
+            block.config.else_blocks.map((elseBlock, index) => (
+              <div key={elseBlock.id} style={{ marginBottom: '0.5rem' }}>
+                <Block
+                  block={elseBlock}
+                  runbookId={runbookId}
+                  onDelete={() => onDeleteNestedBlock(block.id, elseBlock.id)}
+                  onEdit={() => onEditNestedBlock(block.id, elseBlock, 'else_blocks')}
+                  isEditable={isEditable}
+                  isNested={true}
+                  isDisabled={!conditionResult || conditionResult.condition_met}
+                />
+              </div>
+            ))
+          ) : (
+            <div style={{
+              backgroundColor: '#f8f9fa',
+              border: '1px dashed #f5c6cb',
+              borderRadius: '4px',
+              padding: '1rem',
+              textAlign: 'center',
+              color: '#6c757d',
+              fontSize: '0.875rem'
+            }}>
+              No blocks to execute when false.
             </div>
           )}
         </div>
@@ -305,37 +368,16 @@ const Block = ({
           conditionOutput = 'Unknown condition type';
       }
 
-      // If condition is met, execute nested blocks
-      const nestedResults = [];
-      if (conditionMet && block.config.nested_blocks) {
-        for (const nestedBlock of block.config.nested_blocks) {
-          try {
-            const result = await executeBlock(nestedBlock, runbookId);
-            nestedResults.push({
-              blockId: nestedBlock.id,
-              blockName: nestedBlock.name,
-              status: 'success',
-              output: String(result.data.output || '')
-            });
-          } catch (nestedErr) {
-            const errorOutput = nestedErr.response?.data?.detail;
-            nestedResults.push({
-              blockId: nestedBlock.id,
-              blockName: nestedBlock.name,
-              status: 'error',
-              output: typeof errorOutput === 'string' ? errorOutput : JSON.stringify(errorOutput) || 'Execution failed'
-            });
-          }
-        }
-      }
+      // If condition is met, user can execute nested blocks manually
+      // We do not execute them automatically here.
 
       setExecutionResult({
         status: 'success',
         output: conditionMet
-          ? `${conditionOutput} - Condition TRUE. Executed ${nestedResults.length} nested blocks.`
-          : `${conditionOutput} - Condition FALSE. Nested blocks skipped.`,
+          ? `${conditionOutput} - Condition TRUE. You can now execute nested blocks.`
+          : `${conditionOutput} - Condition FALSE.`,
         condition_met: conditionMet,
-        nested_results: nestedResults
+        nested_results: []
       });
 
     } catch (err) {
@@ -453,23 +495,6 @@ const Block = ({
           <pre className="bg-dark text-white p-3 rounded mt-2">
             <code>{String(executionResult.output || '')}</code>
           </pre>
-          {/* Display nested block results for condition blocks */}
-          {executionResult.nested_results && executionResult.nested_results.length > 0 && (
-            <div className="mt-3">
-              <h6>Nested Block Results:</h6>
-              {executionResult.nested_results.map((result, index) => (
-                <div key={index} className="mb-2">
-                  <StatusBadge status={result.status} />
-                  <span className="ms-2">{result.blockName || result.blockId}</span>
-                  {result.output && (
-                    <pre className="bg-secondary text-white p-2 rounded mt-1" style={{ fontSize: '0.75rem' }}>
-                      <code>{String(result.output || '')}</code>
-                    </pre>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
         </Card.Footer>
       )}
     </Card>

@@ -117,7 +117,7 @@ function RunbookEditor() {
     );
   };
 
-  const addNestedBlock = (parentBlockId, blockType) => {
+  const addNestedBlock = (parentBlockId, blockType, path = 'nested_blocks') => {
     const newNestedBlock = {
       id: uuidv4(),
       type: blockType,
@@ -129,12 +129,12 @@ function RunbookEditor() {
     setBlocks(
       blocks.map((block) => {
         if (block.id === parentBlockId) {
-          const nestedBlocks = block.config.nested_blocks || [];
+          const currentBlocks = block.config[path] || [];
           return {
             ...block,
             config: {
               ...block.config,
-              nested_blocks: [...nestedBlocks, newNestedBlock]
+              [path]: [...currentBlocks, newNestedBlock]
             }
           };
         }
@@ -143,10 +143,11 @@ function RunbookEditor() {
     );
   };
 
-  const editNestedBlock = (parentBlockId, nestedBlock) => {
+  const editNestedBlock = (parentBlockId, nestedBlock, path = 'nested_blocks') => {
     setEditingBlock({
       ...nestedBlock,
-      parentBlockId: parentBlockId
+      parentBlockId: parentBlockId,
+      path: path
     });
     setShowModal(true);
   };
@@ -155,36 +156,60 @@ function RunbookEditor() {
     setBlocks(
       blocks.map((block) => {
         if (block.id === parentBlockId) {
-          const nestedBlocks = (block.config.nested_blocks || []).filter(
-            (nestedBlock) => nestedBlock.id !== nestedBlockId
-          );
-          return {
-            ...block,
-            config: {
-              ...block.config,
-              nested_blocks: nestedBlocks
-            }
-          };
+          // Check nested_blocks
+          if ((block.config.nested_blocks || []).some(b => b.id === nestedBlockId)) {
+             const nestedBlocks = (block.config.nested_blocks || []).filter(
+              (nestedBlock) => nestedBlock.id !== nestedBlockId
+            );
+            return {
+              ...block,
+              config: {
+                ...block.config,
+                nested_blocks: nestedBlocks
+              }
+            };
+          }
+          // Check else_blocks
+          if ((block.config.else_blocks || []).some(b => b.id === nestedBlockId)) {
+             const elseBlocks = (block.config.else_blocks || []).filter(
+              (nestedBlock) => nestedBlock.id !== nestedBlockId
+            );
+            return {
+              ...block,
+              config: {
+                ...block.config,
+                else_blocks: elseBlocks
+              }
+            };
+          }
         }
         return block;
       })
     );
   };
 
-  const saveNestedBlock = (nestedBlockId, newConfig, name, parentBlockId) => {
+  const saveNestedBlock = (nestedBlockId, newConfig, name, parentBlockId, path = 'nested_blocks') => {
     setBlocks(
       blocks.map((block) => {
         if (block.id === parentBlockId) {
-          const nestedBlocks = (block.config.nested_blocks || []).map((nestedBlock) =>
+          // If path is provided (from EditBlockModal), use it.
+          // Otherwise, we might need to search (legacy support or safety), but modal should provide it now.
+          
+          // For now, let's trust the path if provided, or search if not.
+          // Actually, EditBlockModal will pass back what we gave it.
+          
+          const targetList = block.config[path] || [];
+          const updatedList = targetList.map((nestedBlock) =>
             nestedBlock.id === nestedBlockId
               ? { ...nestedBlock, config: newConfig, name: name }
               : nestedBlock
           );
+          
           return {
             ...block,
             config: {
               ...block.config,
-              nested_blocks: nestedBlocks
+              [path]: updatedList
             }
           };
         }
@@ -244,12 +269,27 @@ function RunbookEditor() {
             boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
             border: '1px solid #e9ecef'
           }}>
-            <h5 style={{ fontWeight: '600', color: '#2c3e50', marginBottom: '1rem' }}>
-              {title || 'System Maintenance Runbook'}
-            </h5>
-            <p style={{ color: '#6c757d', marginBottom: '1.5rem', lineHeight: '1.6' }}>
-              {description || 'This runbook performs standard system maintenance on all production servers. It ensures that disk space is managed, packages are up-to-date, and critical services are running correctly.'}
-            </p>
+            <Form.Group controlId="runbookTitle" className="mb-3">
+              <Form.Label className="h5" style={{ fontWeight: '600', color: '#2c3e50', marginBottom: '1rem' }}>Runbook Title</Form.Label>
+              <Form.Control
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Enter runbook title"
+                style={{ fontSize: '1.5rem', fontWeight: '600', color: '#2c3e50', border: 'none', padding: '0', marginBottom: '1rem' }}
+              />
+            </Form.Group>
+            <Form.Group controlId="runbookDescription" className="mb-4">
+              <Form.Label>Description</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Enter runbook description"
+                style={{ color: '#6c757d', lineHeight: '1.6' }}
+              />
+            </Form.Group>
 
             <Form.Group controlId="environment" className="mb-4">
               <Form.Label>Execution Environment</Form.Label>
@@ -555,9 +595,9 @@ function RunbookEditor() {
         show={showModal}
         onHide={closeModal}
         block={editingBlock}
-        onSave={(id, config, name, parentBlockId) => {
+        onSave={(id, config, name, parentBlockId, path) => {
           if (parentBlockId) {
-            saveNestedBlock(id, config, name, parentBlockId);
+            saveNestedBlock(id, config, name, parentBlockId, path);
           } else {
             saveBlock(id, config, name);
           }

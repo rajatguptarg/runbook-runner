@@ -15,7 +15,7 @@ function EditBlockModal({ show, onHide, block, onSave, credentials }) {
   const handleSave = () => {
     if (block.parentBlockId) {
       // This is a nested block
-      onSave(block.id, config, name, block.parentBlockId);
+      onSave(block.id, config, name, block.parentBlockId, block.path);
     } else {
       // This is a regular block
       onSave(block.id, config, name);
