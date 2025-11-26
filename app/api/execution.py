@@ -20,6 +20,7 @@ from app.services.execution import (
     execute_api_block,
     execute_timer_block,
     execute_ssh_block,
+    evaluate_condition,
     BlockExecutionResult,
 )
 
@@ -124,6 +125,15 @@ async def execute_block(request: BlockExecuteRequest, _=auth):
         result = await execute_timer_block(block)
     elif block.type == "ssh":
         result = await execute_ssh_block(block)
+    elif block.type == "condition":
+        is_met, description = await evaluate_condition(block, environment)
+        # Map boolean result to BlockExecutionResult
+        # We use exit_code 0 for True, 1 for False to align with shell conventions often used in checks
+        result = BlockExecutionResult(
+            status="success",  # The evaluation itself was successful
+            output=f"{description}",
+            exit_code=0 if is_met else 1
+        )
     else:
         raise HTTPException(
             status_code=400, detail=f"Block type '{block.type}' cannot be executed."
