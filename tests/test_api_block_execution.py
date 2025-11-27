@@ -37,7 +37,7 @@ def sre_token(client: TestClient) -> str:
 async def test_execute_condition_block(client: TestClient, sre_token: str):
     runbook = Runbook(title="Cond Test", description="d", created_by=uuid4())
     await runbook.insert()
-    
+
     block_id = uuid4()
     block_data = {
         "id": str(block_id),
@@ -50,7 +50,7 @@ async def test_execute_condition_block(client: TestClient, sre_token: str):
         },
         "order": 1
     }
-    
+
     with patch("app.services.execution.execute_command_block") as mock_exec:
         mock_exec.return_value.exit_code = 0
         mock_exec.return_value.status = "success"
@@ -61,7 +61,7 @@ async def test_execute_condition_block(client: TestClient, sre_token: str):
             headers={"X-API-KEY": sre_token},
             json={"block": block_data, "runbook_id": str(runbook.id)}
         )
-        
+
         # Currently expecting 400 because condition type is not supported in execute_block endpoint
         # I will fix this in the next step
         if resp.status_code == 200:

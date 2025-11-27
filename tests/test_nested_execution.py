@@ -38,7 +38,7 @@ def setup_db(monkeypatch):
     # Connect to a mock MongoDB database
     client = AsyncMongoMockClient("mongodb://localhost:27017/")
     database = client["testdb"]
-    
+
     async def init():
         await init_beanie(
             database=database,
@@ -86,7 +86,7 @@ async def test_nested_execution_success():
     with patch("app.services.execution.execute_command_block") as mock_exec:
         # 1. Condition check (success)
         # 2. Nested block execution (success)
-        
+
         mock_exec.side_effect = [
             BlockExecutionResult(status="success", output="", exit_code=0), # Condition check
             BlockExecutionResult(status="success", output="nested", exit_code=0) # Nested command
@@ -200,7 +200,7 @@ async def test_nested_execution_else_path():
     with patch("app.services.execution.execute_command_block") as mock_exec:
         # 1. Condition check (fails)
         # 2. Else block execution (success)
-        
+
         mock_exec.side_effect = [
             BlockExecutionResult(status="success", output="", exit_code=1), # Condition check fails (exit code 1 != 0)
             BlockExecutionResult(status="success", output="else", exit_code=0) # Else command

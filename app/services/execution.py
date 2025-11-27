@@ -336,7 +336,7 @@ async def evaluate_condition(block: Block, environment: ExecutionEnvironment | N
     if condition_type == "command_exit_code":
         check_command = block.config.get("check_command")
         expected_exit_code = int(block.config.get("expected_exit_code", 0))
-        
+
         temp_block = Block(
             type="command",
             config={"command": check_command},
@@ -348,7 +348,7 @@ async def evaluate_condition(block: Block, environment: ExecutionEnvironment | N
     elif condition_type == "api_status_code":
         check_url = block.config.get("check_url")
         expected_status_code = int(block.config.get("expected_status_code", 200))
-        
+
         temp_block = Block(
             type="api",
             config={"url": check_url, "method": "GET"},
@@ -378,7 +378,7 @@ async def evaluate_condition(block: Block, environment: ExecutionEnvironment | N
         result = await execute_command_block(temp_block, environment)
         actual_value = result.output.strip()
         return actual_value == expected_value, f"Env var value: '{actual_value}' (expected '{expected_value}')"
-        
+
     return False, "Unknown condition type"
 
 
@@ -394,10 +394,10 @@ async def process_condition_block(
     await step.insert()
 
     is_met, description = await evaluate_condition(block, environment)
-    
+
     step.output = f"Condition evaluated: {description}. Result: {'TRUE' if is_met else 'FALSE'}"
-    step.status = "success" 
-    step.exit_code = 0 
+    step.status = "success"
+    step.exit_code = 0
     await step.save()
 
     if is_met:
@@ -410,7 +410,7 @@ async def process_condition_block(
                     nested_block = Block(**nested_block_data)
                 else:
                     nested_block = nested_block_data
-                
+
                 success = await process_block(job, nested_block, environment)
                 if not success:
                     return False
@@ -425,7 +425,7 @@ async def process_condition_block(
                     else_block = Block(**else_block_data)
                 else:
                     else_block = else_block_data
-                
+
                 success = await process_block(job, else_block, environment)
                 if not success:
                     return False

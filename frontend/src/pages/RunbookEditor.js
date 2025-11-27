@@ -194,17 +194,17 @@ function RunbookEditor() {
         if (block.id === parentBlockId) {
           // If path is provided (from EditBlockModal), use it.
           // Otherwise, we might need to search (legacy support or safety), but modal should provide it now.
-          
+
           // For now, let's trust the path if provided, or search if not.
           // Actually, EditBlockModal will pass back what we gave it.
-          
+
           const targetList = block.config[path] || [];
           const updatedList = targetList.map((nestedBlock) =>
             nestedBlock.id === nestedBlockId
               ? { ...nestedBlock, config: newConfig, name: name }
               : nestedBlock
           );
-          
+
           return {
             ...block,
             config: {

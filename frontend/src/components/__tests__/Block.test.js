@@ -62,15 +62,15 @@ describe('Block Component', () => {
     });
 
     render(<Block block={block} runbookId={mockRunbookId} />);
-    
+
     const runButton = screen.getByRole('button', { name: '' }); // It has an icon, so empty name or query by icon class
-    // Better to query by role and verify it's the run button if there are multiple. 
+    // Better to query by role and verify it's the run button if there are multiple.
     // The run button has class 'btn-primary'.
     // Or query by the icon class within it.
-    
+
     // In the code: <i className={`bi bi-${block.type === 'condition' ? 'check-circle' : 'play-fill'}`}></i>
     // So for command it is play-fill
-    
+
     // Let's just find the button containing the icon
     const button = document.querySelector('.bi-play-fill').closest('button');
     fireEvent.click(button);
@@ -97,9 +97,9 @@ describe('Block Component', () => {
     };
 
     render(
-      <Block 
-        block={block} 
-        runbookId={mockRunbookId} 
+      <Block
+        block={block}
+        runbookId={mockRunbookId}
         isEditable={true}
         onAddNestedBlock={mockOnAddNestedBlock}
       />
@@ -108,7 +108,7 @@ describe('Block Component', () => {
     expect(screen.getByText('Test Condition')).toBeInTheDocument();
     expect(screen.getByText(/If True:/i)).toBeInTheDocument();
     expect(screen.getByText(/Else (If False):/i)).toBeInTheDocument();
-    
+
     // Check dropdowns
     const addButtons = screen.getAllByText('Add Block');
     expect(addButtons).toHaveLength(2); // One for True, one for Else
